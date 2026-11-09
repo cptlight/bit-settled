@@ -6,7 +6,7 @@ FROM node:22-alpine
 RUN apk add --no-cache git ca-certificates
 WORKDIR /app
 
-ARG CACHE_BUST=2026-11-06-live-3
+ARG CACHE_BUST=2026-11-09-autofill-1
 RUN echo "cache bust: $CACHE_BUST"
 
 RUN git clone --depth 1 https://github.com/cptlight/bit-settled.git .

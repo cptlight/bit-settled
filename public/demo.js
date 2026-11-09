@@ -136,6 +136,12 @@
     renderAgentControls();
     setControlsDisabled(false);
     updateProgress();
+    // Zero-input demo: /demo.html?auto=1 starts the run once the page is ready.
+    if (new URLSearchParams(window.location.search || '').get('auto') === '1') {
+      setTimeout(function () {
+        if (!state.running && !state.busy) runAll();
+      }, 650);
+    }
   }
 
   function applyConfig(config) {

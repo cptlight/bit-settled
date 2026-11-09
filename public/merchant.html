@@ -337,6 +337,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9 5 4h14l1 5v2H4V9Z"/><path d="M6 11v9h12v-9"/><path d="M10 20v-5h4v5"/></svg>
           Open negotiation index
         </a>
+        <button class="btn btn-ghost" id="advancedInventoryBtn" type="button" aria-expanded="false" aria-controls="inventoryPanel importPanel">Advanced inventory</button>
         <a class="btn btn-primary" id="previewLink" href="negotiate.html?merchant=m1&amp;product=p1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           Preview negotiation
@@ -429,7 +430,7 @@
           <div class="panel-foot"><span id="catalogFoot">Every save updates the in-memory catalog; the index picks it up immediately.</span><span class="mono" id="catalogMerchantId">m1</span></div>
         </section>
 
-        <section class="panel" id="inventoryPanel">
+        <section class="panel" id="inventoryPanel" hidden>
           <div class="panel-head">
             <div style="min-width:0">
               <div class="panel-title">Inventory source <span class="badge" id="connectorBadge">connector</span></div>
@@ -514,7 +515,7 @@
           <div class="rules-foot"><span id="rulesFoot">Category windows are inherited by items unless a product override is set.</span><span class="mono" id="rulesMerchantId">m1</span></div>
         </section>
 
-        <section class="panel" id="importPanel">
+        <section class="panel" id="importPanel" hidden>
           <div class="panel-head">
             <div style="min-width:0">
               <div class="panel-title">Import catalog <span class="badge" id="importAdapterBadge">adapters</span></div>

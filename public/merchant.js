@@ -284,8 +284,22 @@
     }
     if (state.merchant && state.agent) state.merchant.agent = state.agent;
     renderAll();
+    fillAgentBrief();
     if (highlightId) highlightProduct(highlightId);
     if (announce) S.toast(announce, 'ok');
+  }
+
+  function fillAgentBrief() {
+    if (!el.agentBrief || (el.agentBrief.value || '').trim()) return;
+    var products = state.products || [];
+    if (!products.length) return;
+    var names = products.slice(0, 3).map(function (p) { return p.name; }).filter(Boolean).join(', ');
+    var prices = products.map(function (p) { return Number(p.price); }).filter(function (n) { return isFinite(n) && n > 0; });
+    var min = prices.length ? Math.min.apply(null, prices) : 0;
+    var max = prices.length ? Math.max.apply(null, prices) : 0;
+    el.agentBrief.value = 'Curate a starter catalog around ' + names +
+      (min && max ? ' in the $' + Math.round(min) + '–$' + Math.round(max) + ' range.' : '.') +
+      ' Add a few adjacent items and apply the same category policy automatically.';
   }
 
   function renderAll() {
@@ -1544,6 +1558,17 @@
   /* --------------------------------------------------------- events -- */
   function wire() {
     el.refresh.addEventListener('click', function () { refreshCatalog(null); });
+    var advancedBtn = document.getElementById('advancedInventoryBtn');
+    if (advancedBtn) {
+      advancedBtn.addEventListener('click', function () {
+        var panels = [document.getElementById('inventoryPanel'), document.getElementById('importPanel')].filter(Boolean);
+        var open = panels.some(function (p) { return !p.hidden; });
+        panels.forEach(function (p) { p.hidden = open; });
+        advancedBtn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        advancedBtn.textContent = open ? 'Advanced inventory' : 'Hide advanced inventory';
+        if (!open) panels[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
     if (el.autoconfigureBtn) el.autoconfigureBtn.addEventListener('click', autoConfigureCatalog);
     if (el.agentAddBtn) el.agentAddBtn.addEventListener('click', addWithAgent);
     if (el.agentSetupRefreshBtn) el.agentSetupRefreshBtn.addEventListener('click', refreshAgentSetup);

@@ -582,7 +582,10 @@
       method: 'POST',
       body: {
         product_id: state.product.id,
-        buyer: { name: 'Maya Chen', email: 'maya@example.com' },
+        buyer: {
+          name: (state.agent && state.agent.name) || 'ProcureBot',
+          email: ((state.agent && state.agent.id) || 'agent') + '@acme.example'
+        },
         contract_id: c.id,
         agent_id: AGENT_ID,
         simulate: !state.live
@@ -758,6 +761,10 @@
     var input = $('mandateMax');
     if (input) input.value = String(state.mandate);
     Promise.all([loadConfig(), loadAgents()]).then(function () {
+      // Auto-fill the mandate from the agent's signed passport — no typing.
+      var agentMax = state.agent && state.agent.limits && Number(state.agent.limits.max_amount);
+      if (input && isFinite(agentMax) && agentMax > 0) input.value = String(agentMax);
+      refreshMandateUi();
       return loadProduct();
     }).catch(function (err) {
       if (err && err.message) fatal(err.message);
