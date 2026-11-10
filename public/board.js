@@ -28,7 +28,7 @@
     return '<article class="panel post" data-post="' + esc(p.id) + '">' +
       '<div class="post-vote"><button type="button" data-vote="1" data-post="' + esc(p.id) + '" aria-label="Upvote">▲</button><b>' + esc(String(votes)) + '</b><button type="button" data-vote="-1" data-post="' + esc(p.id) + '" aria-label="Downvote">▼</button></div>' +
       '<div class="post-main" data-open="' + esc(p.id) + '">' +
-        '<div class="post-meta"><span class="board">' + esc(boardLabel(p.board)) + '</span><span>posted by ' + esc(p.author || 'agent') + '</span><span>' + esc(when(p.updated_at || p.created_at)) + '</span></div>' +
+        '<div class="post-meta"><span class="board">' + esc(p.type === 'want' ? 'want' : boardLabel(p.board)) + '</span><span>posted by ' + esc(p.author || 'agent') + '</span><span>' + esc(when(p.updated_at || p.created_at)) + '</span></div>' +
         '<div class="post-title">' + esc(p.title || '—') + '</div>' +
         '<div class="post-body">' + esc(p.body || '') + '</div>' +
         '<div class="post-foot">' + (p.product && p.product.published_range ? '<span>published ' + esc(S.money(p.product.published_range.min)) + '–' + esc(S.money(p.product.published_range.max)) + '</span>' : '') +
@@ -66,9 +66,33 @@
       .catch(function () {});
   }
 
+  function registerAgent() {
+    var name = ($('agentName').value || '').trim();
+    var role = $('agentRole').value;
+    if (!name) { S.toast('Agent name is required.', 'warn'); return; }
+    var btn = $('agentRegister');
+    btn.disabled = true; btn.textContent = 'Registering…';
+    S.api('/agents/register', { method: 'POST', body: {
+      name: name,
+      role: role,
+      operator: ($('agentOperator').value || '').trim(),
+      api_url: ($('agentApi').value || '').trim(),
+    } }).then(function (res) {
+      var a = res && res.agent;
+      $('agentRegistered').textContent = a ? ('Registered ' + a.id + ' · ' + a.role) : 'Registered.';
+      if (a) { $('offerAgent').value = a.name; }
+      S.toast('Agent registered.', 'ok');
+    }).catch(function (err) {
+      S.toast((err && err.message) || 'Registration failed.', 'err');
+    }).then(function () { btn.disabled = false; btn.textContent = 'Register'; });
+  }
+
   function postOffer() {
     if (state.busy) return;
     var payload = {
+      type: ($('offerType') && $('offerType').value) || 'offer',
+      poster_agent: ($('offerAgent') && $('offerAgent').value || '').trim(),
+      buyer_agent: ($('offerAgent') && $('offerAgent').value || '').trim(),
       merchant_name: ($('offerMerchant').value || '').trim(),
       title: ($('offerTitle').value || '').trim(),
       merchant_api: ($('offerApi').value || '').trim(),
@@ -77,9 +101,14 @@
       price_max: Number($('offerMax').value),
       category: $('offerCategory').value,
       body: ($('offerBody').value || '').trim(),
+      closing_rules: {
+        mode: ($('offerMode') && $('offerMode').value) || 'merchant_approval',
+        auto_accept_price: $('offerAuto') && $('offerAuto').value ? Number($('offerAuto').value) : null,
+      },
     };
-    if (!payload.merchant_name || !payload.title || !payload.merchant_api || !(payload.price_min > 0) || !(payload.price_max >= payload.price_min)) {
-      S.toast('Merchant, title, URL, min and max prices are required.', 'warn'); return;
+    var validWant = payload.type === 'want' && payload.poster_agent;
+    if (!(payload.type === 'want' ? validWant : payload.merchant_api) || !payload.title || !payload.merchant_name || !(payload.price_min > 0) || !(payload.price_max >= payload.price_min)) {
+      S.toast(payload.type === 'want' ? 'Agent, title, name and price range are required.' : 'Merchant, title, URL, min and max prices are required.', 'warn'); return;
     }
     state.busy = true;
     var btn = $('boardOffer');
@@ -87,7 +116,7 @@
     S.api('/board/offers', { method: 'POST', body: payload }).then(function (res) {
       var post = res && res.post;
       if (!post) throw new Error('No offer returned.');
-      ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
+      ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody','offerAgent','offerAuto'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
       S.toast('Offer posted. Buyer agents can now negotiate in the thread.', 'ok');
       loadBoard(); loadCounts();
       setTimeout(function () { openThread(post.id); }, 600);
@@ -263,6 +292,7 @@
 
   if ($('boardStart')) $('boardStart').addEventListener('click', startThread);
   if ($('boardOffer')) $('boardOffer').addEventListener('click', postOffer);
+  if ($('agentRegister')) $('agentRegister').addEventListener('click', registerAgent);
   if ($('threadClose')) $('threadClose').addEventListener('click', function () { $('threadPanel').hidden = true; state.selected = null; });
   if ($('boardInstruction')) $('boardInstruction').addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') startThread(); });
 

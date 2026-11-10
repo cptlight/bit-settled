@@ -863,6 +863,23 @@ async function handleBoardOffer(req, res) {
   sendJson(res, 201, { post: board.createOffer(body) });
 }
 
+async function handleBoardWant(req, res) {
+  const body = await readJson(req);
+  sendJson(res, 201, { post: board.createOffer(Object.assign({}, body, { type: 'want' })) });
+}
+
+async function handleBoardClose(req, res, id) {
+  const body = await readJson(req);
+  const post = board.closePost(id, body);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  sendJson(res, 200, { post });
+}
+
+async function handleBoardAgentRegister(req, res) {
+  const body = await readJson(req);
+  sendJson(res, 201, board.registerAgent(body));
+}
+
 async function handleBoardMessage(req, res, id) {
   const body = await readJson(req);
   const post = board.appendMessage(id, body);
@@ -1363,6 +1380,7 @@ async function routeApi(req, res, method, pathname, query) {
 
   // /api/agents ...
   if (seg[1] === 'agents') {
+    if (seg.length === 3 && seg[2] === 'register' && method === 'POST') return handleBoardAgentRegister(req, res);
     if (seg.length === 2 && method === 'GET') return handleAgents(req, res);
     if (seg.length === 3 && seg[2] === 'verify' && method === 'POST') return handleAgentVerify(req, res);
     if (seg.length === 4 && seg[3] === 'passport' && method === 'GET') {
@@ -1374,6 +1392,8 @@ async function routeApi(req, res, method, pathname, query) {
   if (seg[1] === 'board') {
     if (seg.length === 2 && method === 'GET') return handleBoardList(req, res, query);
     if (seg.length === 3 && seg[2] === 'offers' && method === 'POST') return handleBoardOffer(req, res);
+    if (seg.length === 3 && seg[2] === 'wants' && method === 'POST') return handleBoardWant(req, res);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'close' && method === 'POST') return handleBoardClose(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'messages' && method === 'POST') return handleBoardMessage(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'deal' && method === 'POST') return handleBoardDeal(req, res, seg[3]);
     if (seg.length === 3 && seg[2] === 'posts' && method === 'POST') return handleBoardCreate(req, res);
