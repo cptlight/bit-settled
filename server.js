@@ -26,6 +26,7 @@ const adapters = require('./lib/adapters');
 const connectors = require('./lib/connectors');
 const ai = require('./lib/ai');
 const live = require('./lib/live');
+const mcpHttp = require('./lib/mcp-http');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -1166,6 +1167,11 @@ const server = http.createServer(async (req, res) => {
       if (status >= 500) console.error('[settled] error:', err);
       return fail(res, status, code, err.message || 'unexpected error');
     }
+  }
+
+  // Remote MCP Streamable HTTP endpoint for external AIs.
+  if (pathname === '/mcp' || pathname === '/mcp/') {
+    return mcpHttp.handle(req, res);
   }
 
   // Agent card at the well-known location (outside the /api namespace).

@@ -24,6 +24,7 @@ npm test                 # e2e API tests (spawns its own server, port 4400)
 | URL | What it shows |
 |---|---|
 | `http://127.0.0.1:4173/start.html` | **Demo hub** — one page linking every surface and the machine endpoints. **Start here.** |
+| `http://127.0.0.1:4173/agent-connect.html` | **Connect your AI** — REST, OpenAPI and remote MCP onboarding for an external personal AI |
 | `http://127.0.0.1:4173/live.html` | **Live agent room** — instruct a personal AI and watch it negotiate in public |
 | `http://127.0.0.1:4173/demo.html` | **Live demo console** — the 5-step hackathon story with scorecard and JSON log. **Start here for a demo.** |
 | `http://127.0.0.1:4173/merchant.html` | **Merchant agent console** — catalog, private sell range, public range, auto-accept, terms, editable agent name/tone/greeting, agent/import setup |
@@ -158,7 +159,7 @@ Three paths, one code path — the full map is **[DEFENSIBILITY.md](DEFENSIBILIT
 |---|---|---|
 | **Direct merchant** | `node server.js` (Render Blueprint or Docker) + hosted `/negotiate.html` or a one-line `<script src="/settled-widget.js">` | **ready** (SIM by default) |
 | **Platform / PSP** | REST API + index feed (`/api/index/manifest` → `/api/index/feed` → `/api/index/openapi.json`) | **API + feed ready**; multi-tenant auth roadmap |
-| **Personal-AI runtime** | agent manifest + `mcp/server.js` (stdio MCP) + A2A-style card `/.well-known/agent-card.json` | **local MCP + discovery card ship**; remote MCP/A2A roadmap |
+| **Personal-AI runtime** | agent manifest + local stdio MCP + remote HTTP MCP `/mcp` + A2A-style card `/.well-known/agent-card.json` | **local and remote MCP ship**; A2A protocol remains roadmap |
 
 ```bash
 node mcp/server.js                                 # stdio MCP: 7 tools, manifest → negotiate → order → claim

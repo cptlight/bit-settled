@@ -13,10 +13,11 @@ Buyers don't trust unfamiliar checkout. AI agents can now pay, but they cannot r
 ## What it does
 
 1. **Merchant agent setup** — the merchant connects a catalog/feed (or lets the agent draft one), sets a private sell range and a public published range, configures category rules and negotiation windows, and enables its native agent. No one-by-one product entry.
-2. **Negotiation index** — every negotiable item gets a stable `offer_id`, public `published_range`, `negotiation_window` and `negotiate_url`. Any personal AI or central indexer can crawl the manifest and feed; private floors never appear in the public responses.
-3. **Agent-to-agent negotiation** — the buyer agent presents a passport and signed mandate; the merchant agent counters inside its policy; the model writes the dialogue but the server fixes the legal prices, mandate and auto-accept. Both sides sign the same contract hash.
-4. **PayPal settlement + protection** — risk-priced protection (35/90/150 bps by tier), a PayPal order, capture, and a signed Agent Commerce Contract. Live sandbox mode creates real PayPal order/capture IDs; the default SIM mode is deterministic.
-5. **Instant recourse** — a buyer or agent files a claim with evidence; an AI explainer recommends approve/review/deny; the rule engine pays from the merchant reserve through a PayPal refund, updating the merchant's score and tier.
+2. **Bring-your-own-AI** — `/agent-connect.html` exposes REST, **remote MCP at `/mcp`**, and an agent OpenAPI; any external personal AI can drive the buyer side. `/live.html` publishes the negotiation so people can watch.
+3. **Negotiation index** — every negotiable item gets a stable `offer_id`, public `published_range`, `negotiation_window` and `negotiate_url`. Any personal AI or central indexer can crawl the manifest and feed; private floors never appear in the public responses.
+4. **Agent-to-agent negotiation** — the buyer agent presents a passport and signed mandate; the merchant agent counters inside its policy; the model writes the dialogue but the server fixes the legal prices, mandate and auto-accept. Both sides sign the same contract hash.
+5. **PayPal settlement + protection** — risk-priced protection (35/90/150 bps by tier), a PayPal order, capture, and a signed Agent Commerce Contract. Live sandbox mode creates real PayPal order/capture IDs; the default SIM mode is deterministic.
+6. **Instant recourse** — a buyer or agent files a claim with evidence; an AI explainer recommends approve/review/deny; the rule engine pays from the merchant reserve through a PayPal refund, updating the merchant's score and tier.
 
 ## How we built it
 
