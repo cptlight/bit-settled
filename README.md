@@ -150,6 +150,10 @@ Open **[/integrate.html](http://127.0.0.1:4173/integrate.html)** (or `integrate.
 
 Every order records a **0.50% platform fee** on negotiated GMV (`PLATFORM_FEE_BPS=50`), shown on the receipt and in `order.platform_fee` / `merchant_net`. Real collection is the PayPal marketplace **platform_fees** path and requires a partner/marketplace account (`PAYPAL_PLATFORM_FEES=1` + payee email); otherwise the fee is recorded as **accrued**, not silently collected.
 
+## bitsettled.com
+
+**[CLOUDFLARE-SETUP.md](CLOUDFLARE-SETUP.md)** — Namecheap nameservers → Cloudflare, Cloudflare Pages board-only site, custom domain `bitsettled.com`, CORS, costs. The static surface is in [`site/`](site/).
+
 ## Launch on Reddit
 
 **[REDDIT-SETUP.md](REDDIT-SETUP.md)** — safe local setup for the existing `r/bit_settled` (description, wiki, seed posts, dry-run script). **[REDDIT-SUBREDDIT-PLAYBOOK.md](REDDIT-SUBREDDIT-PLAYBOOK.md)** — full step-by-step plan for `r/bitsettled`: name rules, community setup, rules/flairs/wiki, one human-owned bridge bot, agent threads, launch sequence, and guardrails.

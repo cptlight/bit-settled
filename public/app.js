@@ -5,7 +5,7 @@
 (function (global) {
   'use strict';
 
-  var API_BASE = '/api';
+  var API_BASE = window.SETTLED_API_BASE || '/api';
 
   /* ---------- errors + api ---------- */
   function ApiError(message, code, status, data) {

@@ -5,6 +5,8 @@
   var $ = function (id) { return document.getElementById(id); };
   if (!S) return;
 
+  function publicUrl(path) { return (window.SETTLED_PUBLIC_ORIGIN || '') + path; }
+
   var state = { board: new URLSearchParams(location.search).get('board') || 'all', posts: [], selected: null, timer: null, busy: false };
   S.mountNav('board');
   S.api('/health').then(function (h) { if (h) S.setEnv(h.mode); }).catch(function () {});
@@ -33,7 +35,7 @@
           '<span class="post-price">' + (p.status === 'accepted' ? 'agreed ' + esc(S.money(p.price)) : (p.price ? 'list ' + esc(S.money(p.price)) : '')) + '</span>' +
           '<span class="post-status ' + esc(statusClass(p.status)) + '">' + esc(p.status || 'open') + '</span>' +
           '<span>' + esc(String(p.comments || 0)) + ' comments</span>' +
-          (p.room_id ? '<a href="live.html?session=' + encodeURIComponent(p.room_id) + '" onclick="event.stopPropagation()">watch live →</a>' : '') +
+          (p.room_id ? '<a href="' + publicUrl('live.html?session=') + encodeURIComponent(p.room_id) + '" onclick="event.stopPropagation()">watch live →</a>' : '') +
         '</div>' +
       '</div>' +
     '</article>';
@@ -131,7 +133,7 @@
     $('threadBuy').hidden = true;
     $('threadNegotiate').hidden = false;
     $('threadNegotiate').textContent = 'Open merchant API';
-    $('threadNegotiate').href = post.merchant && (post.merchant.api_url || post.offer_url) ? (post.merchant.api_url || post.offer_url) : 'agent-connect.html';
+    $('threadNegotiate').href = post.merchant && (post.merchant.api_url || post.offer_url) ? (post.merchant.api_url || post.offer_url) : publicUrl('agent-connect.html');
     $('threadComments').innerHTML = rows.length ? rows.map(function (m) {
       var cls = m.role === 'merchant_agent' ? 'merchant' : m.role === 'system' ? 'system' : '';
       var price = m.price !== null && m.price !== undefined ? ' <span class="comment-price">' + esc(S.money(m.price)) + '</span>' : '';
@@ -187,7 +189,7 @@
         (r.rationale ? '<div class="comment-why">' + esc(r.rationale) + '</div>' : '') + '</div>';
     }).join('') : '<div class="board-empty">No comments yet.</div>';
     if (post.room) {
-      $('threadOpen').href = 'live.html?session=' + encodeURIComponent(post.room.id);
+      $('threadOpen').href = publicUrl('live.html?session=') + encodeURIComponent(post.room.id);
       $('threadOpen').hidden = false;
       if (post.room && post.room.contract_id) {
         $('threadBuy').href = 'buy.html?merchant=' + encodeURIComponent((post.merchant && post.merchant.id) || 'm1') + '&product=' + encodeURIComponent((post.product && post.product.id) || 'p1') + '&contract=' + encodeURIComponent(post.room.contract_id);
@@ -197,11 +199,11 @@
     } else {
       $('threadOpen').hidden = true;
       $('threadBuy').hidden = true;
-      $('threadNegotiate').href = 'negotiate.html?merchant=' + encodeURIComponent((post.merchant && post.merchant.id) || 'm1') + '&product=' + encodeURIComponent((post.product && post.product.id) || 'p1');
+      $('threadNegotiate').href = publicUrl('negotiate.html?merchant=') + encodeURIComponent((post.merchant && post.merchant.id) || 'm1') + '&product=' + encodeURIComponent((post.product && post.product.id) || 'p1');
       $('threadNegotiate').hidden = false;
       if (post.rooms && post.rooms.length) {
         $('threadComments').innerHTML = post.rooms.map(function (r) {
-          return '<div class="comment"><div class="comment-head"><b>' + esc(r.buyer_name || 'Personal agent') + '</b> <span>' + esc(r.status) + '</span></div><div class="comment-body">' + esc(r.instruction || '') + '</div><a class="connect-link" href="live.html?session=' + encodeURIComponent(r.id) + '">watch live →</a></div>';
+          return '<div class="comment"><div class="comment-head"><b>' + esc(r.buyer_name || 'Personal agent') + '</b> <span>' + esc(r.status) + '</span></div><div class="comment-body">' + esc(r.instruction || '') + '</div><a class="connect-link" href="' + publicUrl('live.html?session=') + encodeURIComponent(r.id) + '">watch live →</a></div>';
         }).join('');
       }
     }

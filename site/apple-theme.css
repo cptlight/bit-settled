@@ -1,0 +1,508 @@
+/* =========================================================
+   bit-settled — PayPal-style light theme
+   Loaded after the page's own styles so it can override the
+   original dark fintech skin without changing any behavior.
+   ========================================================= */
+body.apple-theme {
+  --bg: #ffffff;
+  --bg-2: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --surface-3: #e8e8ed;
+  --line: #d2d2d7;
+  --line-2: #b8b8bf;
+  --ink: #1d1d1f;
+  --ink-2: #1d1d1f;
+  --muted: #6e6e73;
+  --muted-2: #86868b;
+  --emerald: #0071e3;
+  --emerald-2: #0071e3;
+  --emerald-ink: #ffffff;
+  --emerald-dim: rgba(0, 113, 227, .08);
+  --emerald-line: rgba(0, 113, 227, .32);
+  --gold: #0071e3;
+  --gold-2: #0071e3;
+  --gold-ink: #ffffff;
+  --gold-dim: rgba(0, 113, 227, .08);
+  --gold-line: rgba(0, 113, 227, .28);
+  --danger: #ff3b30;
+  --danger-dim: rgba(217, 54, 62, .08);
+  --danger-line: rgba(217, 54, 62, .3);
+  --blue: #0071e3;
+  --blue-dim: rgba(0, 113, 227, .08);
+  --blue-line: rgba(0, 113, 227, .28);
+  --shadow: 0 4px 24px rgba(0, 0, 0, .06);
+  --shadow-pop: 0 12px 40px rgba(0, 0, 0, .12);
+  color-scheme: light;
+  background: #ffffff !important;
+  color: #1d1d1f !important;
+}
+body.apple-theme .bg { background: #ffffff !important; }
+body.apple-theme .bg::after {
+  opacity: .35 !important;
+  background-image:
+    linear-gradient(rgba(0, 113, 227, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 113, 227, .045) 1px, transparent 1px) !important;
+}
+body.apple-theme h1, body.apple-theme h2, body.apple-theme h3, body.apple-theme h4 { color: #1d1d1f !important; }
+body.apple-theme p, body.apple-theme .page-sub, body.apple-theme .demo-sub, body.apple-theme .hub-hero p { color: #6e6e73 !important; }
+body.apple-theme a { color: #0071e3; }
+body.apple-theme .eyebrow, body.apple-theme .hub-kicker, body.apple-theme .integrate-step,
+body.apple-theme .das-kicker, body.apple-theme .demo-hero-copy .eyebrow,
+body.apple-theme .mkt-kicker, body.apple-theme .agent-setup-note b { color: #0071e3 !important; }
+body.apple-theme .muted, body.apple-theme .muted-2, body.apple-theme .tiny.muted,
+body.apple-theme .demo-hero-note, body.apple-theme .demo-progress, body.apple-theme .step-endpoint { color: #6e6e73 !important; }
+body.apple-theme .mono { color: inherit; }
+
+/* top navigation */
+body.apple-theme .topbar, body.apple-theme .topnav {
+  background: #ffffff !important;
+  border-bottom: 1px solid #d2d2d7 !important;
+  box-shadow: 0 2px 10px -6px rgba(0, 20, 53, .18) !important;
+  backdrop-filter: none !important;
+}
+body.apple-theme .topbar-inner, body.apple-theme .topnav-in { background: #ffffff !important; }
+body.apple-theme .brand-name, body.apple-theme .brand-copy b, body.apple-theme .brand b { color: #1d1d1f !important; }
+body.apple-theme .brand-sub, body.apple-theme .brand-copy small { color: #6e6e73 !important; }
+body.apple-theme .brand-mark { background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .nav a, body.apple-theme .nav a:visited { color: #2c2e2f !important; }
+body.apple-theme .nav a:hover, body.apple-theme .nav a.active,
+body.apple-theme .nav a.is-active { color: #0071e3 !important; border-bottom-color: #0071e3 !important; }
+body.apple-theme .env-pill, body.apple-theme .nav-merchant { background: #f5f5f7 !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .env-pill .dot { background: #0071e3 !important; }
+body.apple-theme .tier { background: #e8f1fb !important; color: #0071e3 !important; border-color: #b8d8f4 !important; }
+
+/* cards, panels, steps */
+body.apple-theme .panel, body.apple-theme .hub-card, body.apple-theme .demo-step,
+body.apple-theme .axis-card, body.apple-theme .demo-result, body.apple-theme .demo-final,
+body.apple-theme .mkt-card, body.apple-theme .product-row, body.apple-theme .integrate-card,
+body.apple-theme .embed-card, body.apple-theme .store-card, body.apple-theme .what-card,
+body.apple-theme .agent-setup-panel, body.apple-theme .pr-group, body.apple-theme .import-panel,
+body.apple-theme .ai-block, body.apple-theme .demo-log-panel, body.apple-theme .claim-panel,
+body.apple-theme .order-panel, body.apple-theme .neg-panel, body.apple-theme .checkout-panel,
+body.apple-theme .receipt-panel, body.apple-theme .card, body.apple-theme .surface {
+  background: #ffffff !important;
+  border-color: #d2d2d7 !important;
+  color: #1d1d1f !important;
+  box-shadow: 0 10px 26px -24px rgba(0, 20, 53, .22) !important;
+}
+body.apple-theme .demo-step.is-active, body.apple-theme .axis-card.is-done {
+  border-color: rgba(0, 113, 227, .45) !important;
+  background: #f5f5f7 !important;
+  box-shadow: 0 10px 26px -22px rgba(0, 113, 227, .3) !important;
+}
+body.apple-theme .axis-card::before { background: #d2d2d7 !important; }
+body.apple-theme .axis-card.is-done::before { background: #0071e3 !important; }
+body.apple-theme .axis-bar { background: #e8eef5 !important; }
+body.apple-theme .axis-bar span, body.apple-theme .axis-card.is-done .axis-bar span { background: #0071e3 !important; }
+body.apple-theme .axis-after, body.apple-theme .axis-card.is-done .axis-after { color: #0071e3 !important; }
+body.apple-theme .axis-before, body.apple-theme .axis-card.is-done .axis-before,
+body.apple-theme .axis-name, body.apple-theme .axis-foot,
+body.apple-theme .axis-card.is-done .axis-foot { color: #6e6e73 !important; }
+body.apple-theme .axis-dot { background: #d2d2d7 !important; }
+body.apple-theme .axis-card.is-done .axis-dot { background: #0071e3 !important; box-shadow: 0 0 0 3px rgba(0,112,186,.14) !important; }
+
+/* buttons */
+body.apple-theme .btn-primary, body.apple-theme button.btn-primary {
+  background: #0071e3 !important; border-color: #0071e3 !important; color: #ffffff !important;
+}
+body.apple-theme .btn-primary:hover { background: #0071e3 !important; }
+body.apple-theme .btn-gold { background: #0071e3 !important; border-color: #0071e3 !important; color: #1d1d1f !important; }
+body.apple-theme .btn-ghost { background: #ffffff !important; border-color: #d2d2d7 !important; color: #1d1d1f !important; }
+body.apple-theme .btn-danger { background: #d9363e !important; border-color: #d9363e !important; color: #fff !important; }
+body.apple-theme .btn, body.apple-theme button { color: #1d1d1f; }
+body.apple-theme .btn-primary, body.apple-theme .btn-primary * { color: #fff !important; }
+
+/* badges */
+body.apple-theme .badge, body.apple-theme .chip, body.apple-theme .pill {
+  background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .badge.emerald, body.apple-theme .badge.green { background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .badge.gold { background: #fff4d6 !important; border-color: #f2d38a !important; color: #7a5300 !important; }
+body.apple-theme .badge.danger { background: #fdecee !important; border-color: #f3b8bd !important; color: #b4232c !important; }
+
+/* forms */
+body.apple-theme input, body.apple-theme textarea, body.apple-theme select,
+body.apple-theme .input, body.apple-theme .m-input {
+  background: #ffffff !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme input::placeholder, body.apple-theme textarea::placeholder { color: #8b98a7 !important; }
+body.apple-theme .field-label, body.apple-theme label { color: #1d1d1f !important; }
+body.apple-theme .switch-track { background: #d2d2d7 !important; }
+body.apple-theme .switch input:checked + .switch-track { background: #0071e3 !important; }
+
+/* code, logs, chat */
+body.apple-theme .demo-log, body.apple-theme .log-entry, body.apple-theme .hub-code,
+body.apple-theme .codeblock, body.apple-theme .install-code, body.apple-theme .log-json,
+body.apple-theme .code-strip, body.apple-theme pre, body.apple-theme code {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important; color: #0f2b46 !important;
+}
+body.apple-theme .log-head, body.apple-theme .log-block, body.apple-theme .log-label,
+body.apple-theme .log-path, body.apple-theme .log-ms,
+body.apple-theme .ai-rationale, body.apple-theme .ai-msg { color: #6e6e73 !important; border-color: #d2d2d7 !important; }
+body.apple-theme .log-status { background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #1d1d1f !important; }
+body.apple-theme .log-status.ok { background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .agent-chat, body.apple-theme .chat-bubble, body.apple-theme .chat-bubble.merchant {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .chat-bubble.buyer { background: #f5f5f7 !important; border-color: #b8d8f4 !important; }
+
+/* tables */
+body.apple-theme table, body.apple-theme .rules-table { background: #ffffff !important; color: #1d1d1f !important; }
+body.apple-theme th { background: #f6f8fb !important; color: #6e6e73 !important; border-color: #d2d2d7 !important; }
+body.apple-theme td, body.apple-theme tr { border-color: #d2d2d7 !important; }
+
+/* PayPal-specific surfaces */
+body.apple-theme .pp-button { background: #0071e3 !important; color: #1d1d1f !important; border-color: #0071e3 !important; }
+body.apple-theme .pp-button .pp-word, body.apple-theme .pp-button .pp-buy { color: #1d1d1f !important; }
+body.apple-theme .hub-hero h1 em, body.apple-theme .integrate-hero h1 em,
+body.apple-theme .demo-title em, body.apple-theme .store-title em { color: #0071e3 !important; }
+body.apple-theme .hub-card:hover { border-color: #0071e3 !important; }
+body.apple-theme .hub-card .hub-arrow { color: #6e6e73 !important; }
+body.apple-theme .hub-card:hover .hub-arrow { color: #0071e3 !important; }
+body.apple-theme .hub-code b, body.apple-theme .codeblock b { color: #0071e3 !important; }
+body.apple-theme .demo-agent-strip { background: #f5f5f7 !important; border-color: #b8d8f4 !important; }
+body.apple-theme .das-left b { color: #1d1d1f !important; }
+body.apple-theme .das-status { color: #6e6e73 !important; }
+body.apple-theme .das-link { color: #0071e3 !important; }
+body.apple-theme .merchant-layout, body.apple-theme .merchant-main { background: transparent !important; }
+body.apple-theme .product-row .pr-name, body.apple-theme .pr-id, body.apple-theme .pr-meta { color: #1d1d1f !important; }
+body.apple-theme .pr-meta, body.apple-theme .pr-group-label { color: #6e6e73 !important; }
+body.apple-theme .pr-group.private { background: #fff8e8 !important; border-color: #f2d38a !important; }
+body.apple-theme .pr-group.public { background: #f5f5f7 !important; border-color: #b8d8f4 !important; }
+body.apple-theme .import-result, body.apple-theme .import-error, body.apple-theme .agent-setup-result { background: #f6f8fb !important; border-color: #d2d2d7 !important; }
+body.apple-theme .market-card, body.apple-theme .offer-card, body.apple-theme .mkt-card { background: #fff !important; }
+body.apple-theme .mkt-card .mkt-price, body.apple-theme .mkt-card .mkt-range { color: #1d1d1f !important; }
+body.apple-theme .mkt-card .mkt-merchant, body.apple-theme .mkt-card .mkt-meta { color: #6e6e73 !important; }
+body.apple-theme .store-buy, body.apple-theme .embed-side, body.apple-theme .store-detail { background: #fff !important; border-color: #d2d2d7 !important; color: #1d1d1f !important; }
+body.apple-theme .store-desc, body.apple-theme .store-kicker, body.apple-theme .buy-hint { color: #6e6e73 !important; }
+body.apple-theme .store-title, body.apple-theme .buy-amount { color: #1d1d1f !important; }
+body.apple-theme .what-card, body.apple-theme .install-card { background: #fff !important; }
+body.apple-theme .what-list li, body.apple-theme .what-list p { color: #6e6e73 !important; }
+body.apple-theme .topnav .nav a[href="start.html"] { color: #0071e3 !important; }
+
+/* ---- page-specific fixes ---- */
+body.apple-theme .step-empty, body.apple-theme .empty, body.apple-theme .log-empty,
+body.apple-theme .demo-log-empty, body.apple-theme .agent-setup-result:empty {
+  background: #f6f8fb !important; color: #6e6e73 !important;
+  border-color: #dbe4ee !important;
+}
+body.apple-theme .step-empty *, body.apple-theme .empty * { color: #6e6e73 !important; }
+body.apple-theme .step-num, body.apple-theme .step-n {
+  background: #1d1d1f !important; border-color: #1d1d1f !important; color: #fff !important;
+}
+body.apple-theme .step, body.apple-theme .demo-step, body.apple-theme .panel { color: #1d1d1f !important; }
+body.apple-theme .demo-step .step-main, body.apple-theme .demo-step .step-title { color: #1d1d1f !important; }
+body.apple-theme .demo-step .step-sub, body.apple-theme .step-sub { color: #6e6e73 !important; }
+
+/* market indexer panels */
+body.apple-theme .mkt-ix-card {
+  background: #fff !important; border-color: #d2d2d7 !important;
+  box-shadow: 0 10px 26px -24px rgba(0,20,53,.22) !important;
+}
+body.apple-theme .mkt-ix-card::before { background: linear-gradient(#0071e3, rgba(0,112,186,0)) !important; }
+body.apple-theme .mkt-ix-title, body.apple-theme .mkt-ix-sub b,
+body.apple-theme .mkt-ix-sub .mono, body.apple-theme .mkt-ix-code { color: #1d1d1f !important; }
+body.apple-theme .mkt-ix-sub { color: #6e6e73 !important; }
+body.apple-theme .mkt-ix-row {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important;
+}
+body.apple-theme .mkt-ix-label { color: #6e6e73 !important; }
+body.apple-theme .mkt-copy {
+  background: #fff !important; border-color: #d2d2d7 !important; color: #0071e3 !important;
+}
+body.apple-theme .mkt-ix-foot, body.apple-theme .mkt-ix-foot .dot { color: #6e6e73 !important; background-color: transparent !important; }
+body.apple-theme .mkt-ix-json pre, body.apple-theme .mkt-ix-json code,
+body.apple-theme #mktJsonExample { background: #f6f8fb !important; color: #0f2b46 !important; border-color: #d2d2d7 !important; }
+
+/* negotiate facts + chat + call log */
+body.apple-theme .facts { background: #d2d2d7 !important; border-color: #d2d2d7 !important; }
+body.apple-theme .fact { background: #fff !important; }
+body.apple-theme .fact-label { color: #6e6e73 !important; }
+body.apple-theme .fact-value { color: #1d1d1f !important; }
+body.apple-theme .chat, body.apple-theme .guard, body.apple-theme .call-log,
+body.apple-theme .hash-line, body.apple-theme .neg-note {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .chat * { color: inherit; }
+body.apple-theme .chat .bubble, body.apple-theme .chat .msg { background: #fff !important; color: #1d1d1f !important; border-color: #d2d2d7 !important; }
+body.apple-theme .guard { border-left-color: #ffc439 !important; }
+body.apple-theme .call-log { background: #fff !important; }
+body.apple-theme .api-error { background: #fdecee !important; border-color: #f3b8bd !important; color: #b4232c !important; }
+
+/* embed demo */
+body.apple-theme .embed-nav {
+  background: #fff !important; border-bottom: 1px solid #d2d2d7 !important;
+  box-shadow: 0 2px 10px -6px rgba(0,20,53,.18) !important;
+}
+body.apple-theme .embed-links a { color: #2c2e2f !important; }
+body.apple-theme .embed-links a:hover, body.apple-theme .embed-links a.is-active { color: #0071e3 !important; }
+body.apple-theme .embed-chips span {
+  background: #f5f5f7 !important; border-color: #b8d8f4 !important; color: #0071e3 !important;
+}
+body.apple-theme .embed-chips span b { color: #0071e3 !important; }
+body.apple-theme .store-features li {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .store-card, body.apple-theme .store-detail, body.apple-theme .store-buy {
+  background: #fff !important; color: #1d1d1f !important;
+}
+body.apple-theme .store-art { background: #1d1d1f !important; }
+
+/* merchant page contrast */
+body.apple-theme .agent-chip {
+  background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .pr-thumb, body.apple-theme .agent-avatar-lg, body.apple-theme .agent-avatar {
+  background: #1d1d1f !important; color: #fff !important; border-color: #1d1d1f !important;
+}
+body.apple-theme .privacy-sub, body.apple-theme .agent-note, body.apple-theme .agent-row span,
+body.apple-theme .privacy-title, body.apple-theme .agent-op, body.apple-theme .agent-tone,
+body.apple-theme .pr-foot, body.apple-theme .catalog-foot, body.apple-theme .panel-foot { color: #6e6e73 !important; }
+body.apple-theme .agent-row, body.apple-theme .privacy-row { border-color: #d2d2d7 !important; }
+body.apple-theme .agent-note b, body.apple-theme .privacy-title { color: #1d1d1f !important; }
+body.apple-theme .privacy-row.private { background: #fff8e8 !important; border-color: #f2d38a !important; }
+body.apple-theme .privacy-row.public { background: #f5f5f7 !important; border-color: #b8d8f4 !important; }
+body.apple-theme .agent-tone { background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .switch span:not(.switch-track) { color: #1d1d1f !important; }
+
+/* remaining contrast fixes */
+body.apple-theme .privacy-note { color: #7a5300 !important; }
+body.apple-theme .term, body.apple-theme .prod-meta span {
+  background: #f5f5f7 !important; border-color: #b8d8f4 !important; color: #0071e3 !important;
+}
+body.apple-theme .term svg { color: #0071e3 !important; }
+body.apple-theme .mkt-chip {
+  background: #fff !important; border-color: #d2d2d7 !important; color: #1d1d1f !important;
+}
+body.apple-theme .mkt-chip:hover { background: #f5f5f7 !important; border-color: #0071e3 !important; color: #0071e3 !important; }
+body.apple-theme .mkt-chip.is-active { background: #e8f1fb !important; border-color: #0071e3 !important; color: #0071e3 !important; }
+body.apple-theme .mkt-chip .n { background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #6e6e73 !important; }
+body.apple-theme .mkt-chip.is-active .n { background: #fff !important; border-color: #b8d8f4 !important; color: #0071e3 !important; }
+body.apple-theme .mkt-board-name { color: #0071e3 !important; }
+body.apple-theme .mkt-board-name i, body.apple-theme .mkt-board-count { color: #6e6e73 !important; }
+
+/* dashboard + store + integrate */
+body.apple-theme .stat {
+  background: #fff !important; border-color: #d2d2d7 !important;
+  box-shadow: 0 8px 20px -22px rgba(0,20,53,.22) !important;
+}
+body.apple-theme .stat::after { display: none !important; }
+body.apple-theme .stat-label, body.apple-theme .stat-sub { color: #6e6e73 !important; }
+body.apple-theme .stat-value { color: #1d1d1f !important; }
+body.apple-theme .stat-label i { background: #0071e3 !important; }
+body.apple-theme .trust-metric { background: #fff !important; }
+body.apple-theme .tm-label { color: #6e6e73 !important; }
+body.apple-theme .tm-value { color: #1d1d1f !important; }
+body.apple-theme .protect-note {
+  background: #f6f8fb !important; border-color: #d2d2d7 !important;
+}
+body.apple-theme .protect-note .pn-title { color: #1d1d1f !important; }
+body.apple-theme .protect-note .pn-sub { color: #6e6e73 !important; }
+body.apple-theme .integrate-note {
+  background: #f5f5f7 !important; border-color: #b8d8f4 !important; color: #1d1d1f !important;
+}
+body.apple-theme .integrate-note b { color: #0071e3 !important; }
+body.apple-theme .integrate-note a { color: #0071e3 !important; }
+body.apple-theme .integrate-table th { background: #f6f8fb !important; }
+body.apple-theme .integrate-table td { background: #fff !important; }
+html { color-scheme: light !important; }
+body.apple-theme ::selection { background: #cce8fb !important; color: #1d1d1f !important; }
+body.apple-theme :focus-visible { outline-color: #0071e3 !important; }
+
+/* ---- PayPal design philosophy: blue-first, human, accessible ---- */
+body.apple-theme {
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --shadow: 0 14px 34px -28px rgba(0, 20, 53, .26);
+}
+body.apple-theme .bg {
+  background:
+    radial-gradient(52% 42% at 8% -10%, rgba(0, 113, 227, .12), transparent 62%),
+    radial-gradient(40% 34% at 96% 0%, rgba(0, 48, 135, .09), transparent 60%),
+    #f5f7fa !important;
+}
+body.apple-theme .bg::after { opacity: .22 !important; }
+body.apple-theme h1, body.apple-theme .demo-title, body.apple-theme .hub-hero h1,
+body.apple-theme .page-title, body.apple-theme .merchant-title {
+  letter-spacing: -.02em;
+}
+body.apple-theme .brand-mark, body.apple-theme .hub-card .hub-kicker,
+body.apple-theme .eyebrow { color: #0071e3 !important; }
+body.apple-theme .badge.gold, body.apple-theme .badge.amber {
+  background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0071e3 !important;
+}
+body.apple-theme .btn, body.apple-theme .hub-card { transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease; }
+body.apple-theme .btn:active { transform: translateY(1px); }
+body.apple-theme .hub-card:hover { box-shadow: 0 16px 34px -28px rgba(0, 20, 53, .28) !important; }
+body.apple-theme .hub-actions .btn-primary { box-shadow: 0 8px 20px -12px rgba(0, 113, 227, .55); }
+@media (prefers-reduced-motion: reduce) {
+  body.apple-theme *, body.apple-theme *::before, body.apple-theme *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================
+   Apple.ca-style layer: SF Pro, white space, thin nav, pills.
+   ========================================================= */
+body.apple-theme {
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #ffffff !important;
+  color: #1d1d1f !important;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+body.apple-theme .bg { display: none !important; }
+body.apple-theme .bg::after { display: none !important; }
+body.apple-theme .shell { max-width: 1180px; padding: 28px 24px 80px; }
+body.apple-theme h1, body.apple-theme h2, body.apple-theme h3, body.apple-theme h4 {
+  color: #1d1d1f !important;
+  font-weight: 600 !important;
+  letter-spacing: -.025em !important;
+}
+body.apple-theme h1 { line-height: 1.05 !important; }
+body.apple-theme p { color: #6e6e73 !important; }
+body.apple-theme a { color: #0066cc !important; }
+body.apple-theme .muted, body.apple-theme .tiny.muted, body.apple-theme .small.muted { color: #6e6e73 !important; }
+body.apple-theme .eyebrow, body.apple-theme .hub-kicker, body.apple-theme .connect-kicker,
+body.apple-theme .das-kicker, body.apple-theme .mkt-kicker {
+  color: #0071e3 !important;
+  font-weight: 600 !important;
+  letter-spacing: .02em !important;
+  text-transform: none !important;
+}
+
+/* thin translucent Apple nav */
+body.apple-theme .topbar,
+body.apple-theme .topnav,
+body.apple-theme .embed-nav {
+  background: rgba(255, 255, 255, .8) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, .08) !important;
+  box-shadow: none !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+}
+body.apple-theme .topbar-inner,
+body.apple-theme .topnav-in,
+body.apple-theme .embed-nav-in {
+  max-width: 1024px !important;
+  height: 48px !important;
+  padding: 0 22px !important;
+}
+body.apple-theme .brand-mark { background: transparent !important; border: 0 !important; }
+body.apple-theme .brand-name, body.apple-theme .brand-copy b, body.apple-theme .brand b {
+  color: #1d1d1f !important; font-size: 17px !important; font-weight: 600 !important; letter-spacing: -.02em;
+}
+body.apple-theme .brand-sub, body.apple-theme .brand-copy small { color: #86868b !important; font-size: 8px !important; }
+body.apple-theme .nav a, body.apple-theme .nav a:visited {
+  color: #1d1d1f !important; font-size: 12px !important; font-weight: 400 !important;
+  letter-spacing: -.005em;
+}
+body.apple-theme .nav a:hover, body.apple-theme .nav a.active, body.apple-theme .nav a.is-active { color: #0066cc !important; border-bottom-color: transparent !important; }
+body.apple-theme .env-pill, body.apple-theme .nav-merchant {
+  background: transparent !important; border-color: transparent !important; color: #6e6e73 !important;
+  font-size: 10px !important;
+}
+
+/* Apple cards and sections */
+body.apple-theme .panel, body.apple-theme .hub-card, body.apple-theme .demo-step,
+body.apple-theme .axis-card, body.apple-theme .demo-result, body.apple-theme .demo-final,
+body.apple-theme .mkt-card, body.apple-theme .product-row, body.apple-theme .integrate-card,
+body.apple-theme .embed-card, body.apple-theme .store-card, body.apple-theme .what-card,
+body.apple-theme .agent-setup-panel, body.apple-theme .demo-log-panel, body.apple-theme .card,
+body.apple-theme .surface, body.apple-theme .stat, body.apple-theme .live-panel,
+body.apple-theme .post, body.apple-theme .thread-panel {
+  background: #ffffff !important;
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+body.apple-theme .panel-head { border-bottom-color: #d2d2d7 !important; }
+body.apple-theme .panel-title { font-size: 15px !important; font-weight: 600 !important; letter-spacing: -.015em; }
+body.apple-theme .panel-sub { color: #6e6e73 !important; font-size: 11px !important; }
+body.apple-theme .panel-foot { color: #86868b !important; border-color: #d2d2d7 !important; }
+body.apple-theme .demo-step.is-active, body.apple-theme .axis-card.is-done,
+body.apple-theme .setup-step.active {
+  background: #f5f5f7 !important; border-color: #0071e3 !important; box-shadow: none !important;
+}
+body.apple-theme .axis-card { border-color: #d2d2d7 !important; }
+body.apple-theme .axis-after, body.apple-theme .axis-card.is-done .axis-after { color: #0071e3 !important; }
+body.apple-theme .axis-bar span, body.apple-theme .axis-card.is-done .axis-bar span { background: #0071e3 !important; }
+body.apple-theme .stat-value { font-weight: 600 !important; }
+
+/* Apple buttons: pill, blue, generous hit area */
+body.apple-theme .btn, body.apple-theme button.btn {
+  border-radius: 980px !important;
+  font-weight: 500 !important;
+  letter-spacing: -.01em !important;
+  min-height: 34px;
+  transition: background .2s, opacity .2s, transform .2s !important;
+}
+body.apple-theme .btn-primary, body.apple-theme button.btn-primary {
+  background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important;
+}
+body.apple-theme .btn-primary:hover { background: #0077ed !important; border-color: #0077ed !important; }
+body.apple-theme .btn-ghost { background: #f5f5f7 !important; border-color: #f5f5f7 !important; color: #1d1d1f !important; }
+body.apple-theme .btn-ghost:hover { background: #e8e8ed !important; }
+body.apple-theme .btn-gold { background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; }
+body.apple-theme .btn:active { transform: scale(.98); }
+body.apple-theme .badge, body.apple-theme .chip, body.apple-theme .pill {
+  border-radius: 980px !important; background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #6e6e73 !important;
+}
+body.apple-theme .badge.emerald, body.apple-theme .badge.blue { background: #e8f1fb !important; border-color: #b8d8f4 !important; color: #0066cc !important; }
+body.apple-theme .badge.gold { background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #6e6e73 !important; }
+
+/* inputs */
+body.apple-theme input, body.apple-theme textarea, body.apple-theme select,
+body.apple-theme .input, body.apple-theme .m-input {
+  background: #ffffff !important; border: 1px solid #d2d2d7 !important; border-radius: 12px !important;
+  color: #1d1d1f !important; font-size: 14px !important;
+}
+body.apple-theme input:focus, body.apple-theme textarea:focus, body.apple-theme select:focus {
+  outline: none !important; border-color: #0071e3 !important; box-shadow: 0 0 0 3px rgba(0,113,227,.12) !important;
+}
+body.apple-theme .field-label, body.apple-theme label { color: #6e6e73 !important; font-size: 11px !important; font-weight: 500 !important; }
+
+/* code / JSON panels */
+body.apple-theme pre, body.apple-theme code, body.apple-theme .demo-log,
+body.apple-theme .hub-code, body.apple-theme .connect-code, body.apple-theme .install-code {
+  background: #f5f5f7 !important; border: 1px solid #d2d2d7 !important; border-radius: 12px !important;
+  color: #1d1d1f !important;
+}
+
+/* hero headlines */
+body.apple-theme .demo-title, body.apple-theme .hub-hero h1, body.apple-theme .connect-title,
+body.apple-theme .live-title, body.apple-theme .board-title, body.apple-theme .buy-title {
+  font-weight: 600 !important; letter-spacing: -.035em !important;
+}
+body.apple-theme .demo-title em, body.apple-theme .hub-hero h1 em,
+body.apple-theme .connect-title em, body.apple-theme .live-title em,
+body.apple-theme .board-title em, body.apple-theme .buy-title em { color: #0071e3 !important; font-style: normal !important; }
+body.apple-theme .hub-card { background: #f5f5f7 !important; border-color: transparent !important; }
+body.apple-theme .hub-card:hover { background: #e8e8ed !important; border-color: transparent !important; transform: none !important; }
+body.apple-theme .hub-card h2 { font-size: 19px !important; font-weight: 600 !important; }
+body.apple-theme .hub-card .hub-arrow { color: #0066cc !important; font-weight: 500 !important; }
+body.apple-theme .hub-actions .btn-primary { box-shadow: none !important; }
+
+/* Apple-style section bands */
+body.apple-theme .demo-agent-strip { background: #f5f5f7 !important; border-color: #d2d2d7 !important; border-radius: 14px !important; }
+body.apple-theme .integrate-note { background: #f5f5f7 !important; border-color: #d2d2d7 !important; color: #1d1d1f !important; }
+body.apple-theme .integrate-note b { color: #1d1d1f !important; }
+body.apple-theme .integrate-note a { color: #0066cc !important; }
+body.apple-theme .judge-path, body.apple-theme .footer { background: transparent !important; border-color: #d2d2d7 !important; color: #6e6e73 !important; }
+body.apple-theme .footer a { color: #6e6e73 !important; }
+
+/* table */
+body.apple-theme th { background: #f5f5f7 !important; color: #6e6e73 !important; font-weight: 500 !important; }
+body.apple-theme td { border-color: #d2d2d7 !important; }
+
+/* PayPal button in the embed demo stays recognisably PayPal */
+body.apple-theme .pp-button { background: #ffc439 !important; border-color: #ffc439 !important; color: #1d1d1f !important; border-radius: 8px !important; }
+body.apple-theme .pp-button .pp-word, body.apple-theme .pp-button .pp-buy { color: #1d1d1f !important; }
+
+/* Apple rounded image/product surfaces */
+body.apple-theme .product-art, body.apple-theme .store-art, body.apple-theme .store-mark,
+body.apple-theme .pr-thumb, body.apple-theme .agent-avatar, body.apple-theme .mkt-avatar {
+  border-radius: 18px !important;
+}
+body.apple-theme .store-art { background: #1d1d1f !important; }
