@@ -4,7 +4,7 @@
 
 **Submission:** ready-to-paste Devpost text in **[SUBMISSION.md](SUBMISSION.md)**.
 
-**Design:** the interface follows PayPal’s design philosophy — blue-first, simple, trusted, human, accessible. See **[DESIGN-PHILOSOPHY.md](DESIGN-PHILOSOPHY.md)**.
+**Design:** the interface follows an Apple.ca-inspired system — SF-style type, white space, high contrast, one blue action colour. See **[DESIGN-PHILOSOPHY.md](DESIGN-PHILOSOPHY.md)**.
 
 **Hosted live-sandbox demo (judges):** https://cptlight-bit-settled.hf.space/start.html — real PayPal **sandbox** + live AI; keys are server-side Space secrets, no real money. **Run full demo** stays deterministic; use **Live checkout** or demo step 4 for real sandbox approval/capture. Keepalive runs every 6 hours.
 

@@ -1,44 +1,49 @@
-# PayPal design philosophy, applied to bit-settled
+# Interface design — Apple.ca-inspired system
 
-PayPal's current identity is built on **simplicity, trust, optimism, and access**: clean geometric type, a blue-first palette, generous whitespace, and interactions that feel human. The 2024 Pentagram refresh removed decorative yellow from the brand system; yellow survives mainly as the familiar checkout button. We follow the same restraint.
+The interface is intentionally **clean, content-first and high-contrast**, following the visual language of apple.ca: SF-style typography, white space, light-gray product surfaces, thin translucent navigation, one blue action colour and almost no decoration.
 
-## Principles → what we changed
+## Principles → implementation
 
-| PayPal principle | What the demo does |
+| Apple-like principle | What the demo does |
 |---|---|
-| **Simple by default** | One primary action per screen: *Run full demo*, *Auto-configure catalog*, *Start agent negotiation*. Advanced controls sit below the first action. |
-| **Trust is visible** | Sandbox/SIM status, private-vs-public range separation, signed credential, protection and refund are shown next to the action they affect — not buried in a spec. |
-| **Human and optimistic** | Plain-language explanations, rounded geometric type, soft blue surfaces, and friendly empty/loading states instead of terminal styling. |
-| **Accessible to everyone** | High-contrast navy-on-white, visible focus rings, labelled controls, responsive layouts, and `prefers-reduced-motion` support. |
-| **Consistent system** | Shared tokens for blue, navy, neutral, radius, spacing and type; every surface uses the same nav, buttons, cards and status language. |
-| **Motion with purpose** | Motion is limited to feedback: hover lift, press, progress and state changes. Motion is removed for users who ask for reduced motion. |
+| **Content first** | Large type, short labels, lots of white space; decorative gradients and terminal textures removed. |
+| **One obvious action** | Blue pill primary CTA per view: *Run the 5-step demo*, *Auto-configure catalog*, *Start agent negotiation*, *Buy this deal*. |
+| **Quiet chrome** | A 48px translucent nav with a hairline divider; no heavy borders or glow. |
+| **Product surfaces** | White cards for active work, `#f5f5f7` cards for browsing/secondary sections, 18px radii. |
+| **SF type** | `-apple-system`, SF Pro Display/Text fallbacks; headline weight 600 with tight tracking; body neutral gray. |
+| **Restrained colour** | Black/near-black text, white surfaces, gray secondary text, and one accent: Apple blue `#0071e3` / link blue `#0066cc`. |
+| **Human, not ornamental** | No decorative gold/emerald gradients; colour only communicates action or status. |
+| **Accessible** | Contrast-safe text, visible focus rings, responsive layout, `prefers-reduced-motion` support. |
 
-## Palette
+## Tokens
 
-- **PayPal navy** `#001435` — primary text and strong surfaces
-- **PayPal blue** `#0070BA` / `#005EA6` — primary actions and links
-- **PayPal light blue** `#E8F3FB` / `#F2F8FD` — selected states, trust panels, hovers
-- **White / off-white** `#FFFFFF` / `#F5F7FA` — canvas and cards
-- **Yellow** `#FFC439` — only the actual PayPal checkout button, not decoration
+- Canvas: `#ffffff`
+- Secondary surface: `#f5f5f7`
+- Hairline: `#d2d2d7`
+- Text: `#1d1d1f`
+- Secondary text: `#6e6e73`
+- Accent / primary action: `#0071e3`
+- Link: `#0066cc`
+- Danger: `#ff3b30`
 
 ## Type
 
-Display and body use a rounded geometric sans stack (`Avenir Next`, `Futura`, `Century Gothic`, system sans). This mirrors PayPal Pro's circular, approachable forms without shipping external font files.
+```
+-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+"Helvetica Neue", Helvetica, Arial, sans-serif
+```
 
-## UX rules
+Headlines are 600-weight with `letter-spacing: -.025em`; body copy is regular gray; monospace is reserved for IDs, code and API proof.
 
-1. **One primary CTA per view**; secondary actions are ghost buttons or links.
-2. **Explain before asking** — every money action has a one-line “what happens” note.
-3. **Progressive disclosure** — technical JSON, advanced policy and machine endpoints are available but not the first thing a merchant sees.
-4. **No dead ends** — every state has a next action or a return path.
-5. **Say it plainly** — “refunded automatically” before “hash-chained credential”.
-6. **Keep the proof** — simplicity never hides the live API evidence; it is labelled as proof.
+## Components
 
-## Where it shows up
+- **Buttons:** 980px pill radius; blue filled primary, light-gray secondary; press scale `.98`.
+- **Cards:** 18px radius, 1px hairline, no shadow; gray cards for discovery, white cards for work.
+- **Nav:** white/80 with backdrop blur, 48px height, 12px links.
+- **Inputs:** 12px radius, hairline, blue focus ring.
+- **Badges:** small pills; gray/blue, no decorative gold.
+- **Code proof:** light `#f5f5f7` panels so the JSON log stays readable but secondary.
 
-- `/start.html` — hero CTA to run the demo, then the surfaces.
-- `/demo.html` — one-sentence promise, one primary Run button, proof log beside it.
-- `/merchant.html` — setup checklist, agent-first panels, no manual product entry.
-- `/market.html` — published ranges and windows, no private floors.
-- `/negotiate.html` — price, mandate, protection and refund in the same reading order.
-- `/embed-demo.html` — real PayPal checkout + one-line negotiation install.
+## Where it applies
+
+`/start.html`, `/demo.html`, `/merchant.html`, `/market.html`, `/negotiate.html`, `/live.html`, `/board.html`, `/buy.html`, `/agent-connect.html`, `/embed-demo.html`, `/integrate.html`, dashboard, storefront, agent console.
