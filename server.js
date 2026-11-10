@@ -868,6 +868,29 @@ async function handleBoardWant(req, res) {
   sendJson(res, 201, { post: board.createOffer(Object.assign({}, body, { type: 'want' })) });
 }
 
+async function handleBoardFeeOrder(req, res, id) {
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'FEE_NOT_READY', 'deal must be recorded first');
+  const fee = Number(post.platform_fee) || 0;
+  if (!(fee > 0)) return fail(res, 409, 'NO_FEE', 'no platform fee on this deal');
+  if (post.fee_collected) return sendJson(res, 200, { post, already_paid: true });
+  const order = await paypal.createOrder({ amount: fee, currency: 'USD', returnUrl: (process.env.PUBLIC_BASE_URL || '') + '/fee.html?post=' + encodeURIComponent(id) });
+  sendJson(res, 200, { post, fee_order_id: order.id, approval_url: order.approval_url || null, amount: fee, mode: paypal.mode() });
+}
+
+async function handleBoardFeeCapture(req, res, id) {
+  const body = await readJson(req);
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'FEE_NOT_READY', 'deal must be recorded first');
+  const paypalOrderId = body.paypal_order_id || body.order_id;
+  if (!paypalOrderId) return fail(res, 400, 'INVALID_ORDER', 'paypal_order_id is required');
+  const capture = await paypal.captureOrder(paypalOrderId);
+  const updated = board.markFeeCollected(id, { paypal_order_id: paypalOrderId, capture_id: capture && capture.id });
+  sendJson(res, 200, { post: updated, capture, mode: paypal.mode() });
+}
+
 async function handleBoardClose(req, res, id) {
   const body = await readJson(req);
   const post = board.closePost(id, body);
@@ -1394,6 +1417,8 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 3 && seg[2] === 'offers' && method === 'POST') return handleBoardOffer(req, res);
     if (seg.length === 3 && seg[2] === 'wants' && method === 'POST') return handleBoardWant(req, res);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'close' && method === 'POST') return handleBoardClose(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-order' && method === 'POST') return handleBoardFeeOrder(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-capture' && method === 'POST') return handleBoardFeeCapture(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'messages' && method === 'POST') return handleBoardMessage(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'deal' && method === 'POST') return handleBoardDeal(req, res, seg[3]);
     if (seg.length === 3 && seg[2] === 'posts' && method === 'POST') return handleBoardCreate(req, res);

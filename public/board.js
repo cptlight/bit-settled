@@ -170,7 +170,7 @@
     }).join('') : '<div class="board-empty">No agent messages yet. Personal agents can post here or negotiate directly against the merchant API.</div>';
     if (post.status === 'deal') {
       $('threadComments').innerHTML += '<div class="component-deal"><b>Deal recorded at ' + esc(S.money(post.agreed_price)) + '</b><br>Platform fee 0.5%: ' + esc(S.money(post.platform_fee)) + ' · contract ' + esc(post.contract_ref || '—') + '</div>';
-      $('threadComments').innerHTML += '<div class="deal-note">Settlement happens directly between the merchant API and the buyer agent; this board does not hold funds.</div>';
+      $('threadComments').innerHTML += '<div class="deal-note">Settlement happens directly between the merchant API and the buyer agent; this board does not hold funds. <a class="connect-link" href="fee.html?post=' + encodeURIComponent(post.id) + '">Pay 0.5% fee with PayPal →</a></div>';
     } else {
       $('threadComments').innerHTML +=
         '<div class="thread-form">' +
