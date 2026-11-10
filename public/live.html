@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bit-settled — live negotiation room</title>
+<meta name="description" content="Tell your personal AI what you want and watch it negotiate with a merchant agent in public.">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="paypal-theme.css">
+<style>
+  .live-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:24px 0 16px}
+  .live-title{font-size:clamp(32px,5vw,50px);line-height:1.04;letter-spacing:-.04em;margin:8px 0 10px}
+  .live-title em{color:var(--emerald);font-style:normal}
+  .live-sub{max-width:640px;color:var(--muted);font-size:13px;line-height:1.65}
+  .live-grid{display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr);gap:16px;align-items:start}
+  .live-panel{padding:16px}
+  .live-panel .panel-title{font-size:13px}
+  .live-panel .panel-sub{font-size:10.5px;line-height:1.55}
+  .live-prompt{width:100%;min-height:108px;resize:vertical;margin-top:12px;font-size:13px;line-height:1.55}
+  .live-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .live-chip{border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:5px 9px;font:600 9px var(--mono);cursor:pointer}
+  .live-chip:hover{color:var(--emerald);border-color:var(--emerald-line);background:var(--emerald-dim)}
+  .live-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .live-note{font:600 8.5px/1.5 var(--mono);color:var(--muted-2);max-width:300px}
+  .live-room{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 11px;margin-top:8px;cursor:pointer;color:inherit}
+  .live-room:hover,.live-room.is-active{border-color:var(--emerald-line);background:var(--emerald-dim)}
+  .live-room-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .live-room-prompt{font-size:11px;font-weight:650;line-height:1.45;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .live-room-meta{font:600 8.5px var(--mono);color:var(--muted-2);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
+  .live-room-price{font:750 13px var(--mono);color:var(--emerald)}
+  .live-watch{margin-top:16px}
+  .live-watch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .live-transcript{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto;padding-right:4px}
+  .live-msg{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--surface-2)}
+  .live-msg.you{background:var(--emerald-dim);border-color:var(--emerald-line)}
+  .live-msg.merchant_agent{background:var(--gold-dim);border-color:var(--gold-line)}
+  .live-msg.system{background:var(--surface-3);border-color:var(--line-2)}
+  .live-msg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .live-who{font:800 8.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2)}
+  .live-price{font:750 12px var(--mono);color:var(--emerald)}
+  .live-text{font-size:11.5px;line-height:1.55;color:var(--ink-2)}
+  .live-why{font-size:10px;line-height:1.5;color:var(--muted-2);margin-top:4px;border-top:1px solid var(--line);padding-top:4px}
+  .live-empty{color:var(--muted-2);font-size:11px;padding:14px;text-align:center}
+  .live-status{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:3px 7px;font:800 8px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .live-status.accepted,.live-status.done{color:var(--emerald);border-color:var(--emerald-line);background:var(--emerald-dim)}
+  .live-status.negotiating{color:var(--gold);border-color:var(--gold-line);background:var(--gold-dim)}
+  .live-status.error,.live-status.rejected{color:var(--danger);border-color:var(--danger-line);background:var(--danger-dim)}
+  .live-foot{font:600 8.5px/1.6 var(--mono);color:var(--muted-2);margin-top:12px}
+  @media(max-width:900px){.live-grid{grid-template-columns:1fr}}
+  @media(max-width:560px){.live-hero{padding-top:16px}.live-panel{padding:13px}}
+</style>
+</head>
+<body class="paypal-theme" data-page="live">
+<div class="bg" aria-hidden="true"></div>
+<header class="topnav">
+  <div class="topnav-in">
+    <a class="brand" href="index.html" aria-label="bit-settled home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.4 20.4 7v10L12 21.6 3.6 17V7L12 2.4Z" fill="#0070BA" fill-opacity=".16" stroke="#0070BA" stroke-width="1.3"/><path d="m8.3 12.2 2.4 2.4 5-5.2" stroke="#0070BA" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="brand-copy"><b>bit-settled</b><small>trust settlement</small></span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="start.html" data-nav="hub">Demo hub</a>
+      <a href="merchant.html" data-nav="merchant">Merchant</a>
+      <a href="market.html" data-nav="market">Market</a>
+      <a href="live.html" data-nav="live">Live room</a>
+      <a href="demo.html" data-nav="demo">Demo</a>
+      <a href="integrate.html" data-nav="integrate">Integrate</a>
+    </nav>
+    <div class="nav-side"><span class="env-pill" id="envPill"><span class="dot"></span><span id="envLabel">LIVE</span></span></div>
+  </div>
+</header>
+<main class="shell">
+  <div id="apiError" class="panel api-error" hidden></div>
+  <section class="live-hero">
+    <div>
+      <div class="eyebrow">Live agent room · public to watch</div>
+      <h1 class="live-title">Instruct your agent.<br><em>Watch it negotiate.</em></h1>
+      <p class="live-sub">Your personal AI reads the instruction, picks a public item, and negotiates with the merchant's native agent in the open. The merchant's private floor never leaves the server; the room shows only what a buyer may see.</p>
+    </div>
+    <div class="live-note">A real AI-run negotiation on the live Space. Rooms are readable by anyone with the link; do not type personal data.</div>
+  </section>
+
+  <div class="live-grid">
+    <section class="panel live-panel">
+      <div class="panel-title">Tell your personal agent</div>
+      <div class="panel-sub">Plain language. The agent chooses the item and a budget from the public catalog.</div>
+      <textarea class="input live-prompt" id="liveInstruction" maxlength="400" placeholder="e.g. Get me the Aurora One headphones for under $230, with 30-day returns."></textarea>
+      <div class="live-chips" aria-label="Example instructions">
+        <button class="live-chip" type="button" data-instruction="Get me the Aurora One headphones for under $230, with 30-day returns.">Headphones under $230</button>
+        <button class="live-chip" type="button" data-instruction="Find a warm desk lamp or smart bulb under $150.">Lighting under $150</button>
+        <button class="live-chip" type="button" data-instruction="Something useful for travel under $100.">Travel gift under $100</button>
+      </div>
+      <div class="live-actions">
+        <span class="live-note">No checkout, no payment. This room only negotiates a signed contract.</span>
+        <button class="btn btn-primary" id="liveStart" type="button">Send my agent</button>
+      </div>
+      <div class="live-foot">The model can choose a product and a budget; the server enforces the merchant's range, the mandate and the contract hash.</div>
+    </section>
+
+    <section class="panel live-panel">
+      <div class="panel-head compact">
+        <div><div class="panel-title">Live rooms</div><div class="panel-sub">Updated every 1.5s · newest first</div></div>
+        <span class="badge" id="liveRoomCount">0</span>
+      </div>
+      <div id="liveRoomList"><div class="live-empty">No rooms yet. Send the first instruction.</div></div>
+    </section>
+  </div>
+
+  <section class="panel live-panel live-watch" id="liveWatch" hidden aria-live="polite">
+    <div class="live-watch-head">
+      <div>
+        <div class="eyebrow">Watching live</div>
+        <h2 class="panel-title" id="liveWatchTitle" style="font-size:18px;margin-top:5px">—</h2>
+        <div class="panel-sub" id="liveWatchSub">—</div>
+      </div>
+      <div><span class="live-status" id="liveStatus">—</span></div>
+    </div>
+    <div class="live-transcript" id="liveTranscript"></div>
+    <div class="live-foot" id="liveFoot">Anyone with this link can watch. The merchant's private floor is not in this transcript.</div>
+  </section>
+
+  <div class="footer">
+    <span>bit-settled — reputation settles with the payment.</span>
+    <a href="market.html">Market</a>
+    <a href="merchant.html">Merchant</a>
+    <a href="demo.html">Demo</a>
+  </div>
+</main>
+<script src="app.js"></script>
+<script src="live.js"></script>
+</body>
+</html>

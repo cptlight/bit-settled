@@ -62,7 +62,7 @@ Buyers don't trust unfamiliar checkout. AI agents can now pay, but they cannot r
 
 ## Try it
 
-- **Hosted live-sandbox demo:** `https://tomscot-bit-settled.hf.space` (Hugging Face Space; live PayPal sandbox + live AI, keys server-side)
+- **Hosted live-sandbox demo:** `https://cptlight-bit-settled.hf.space` (Hugging Face Space; live PayPal sandbox + live AI, keys server-side)
 - **Repo:** https://github.com/cptlight/bit-settled
 - **Local:** `npm start` → `http://127.0.0.1:4173/start.html`
 - **Judge path:** Open the hosted URL → **Run the 5-step demo** → **Run full demo** for the deterministic 5/5 run. For a real sandbox payment, use **Live checkout** (or step 4 manually): approve in PayPal, capture, then claim. The hosted Space uses live PayPal sandbox + live AI; keys stay server-side and no real money moves.

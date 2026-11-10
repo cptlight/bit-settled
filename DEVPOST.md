@@ -9,7 +9,7 @@
 > **Links (fill before submitting)**
 > - Repo: https://github.com/cptlight/bit-settled (Apache-2.0 — see [LICENSE](LICENSE))
 > - Demo video (<3 min, YouTube): `VIDEO_URL`
-> - Hosted live-sandbox demo: `https://tomscot-bit-settled.hf.space` (Hugging Face Space; live PayPal sandbox + live AI, keys server-side)
+> - Hosted live-sandbox demo: `https://cptlight-bit-settled.hf.space` (Hugging Face Space; live PayPal sandbox + live AI, keys server-side)
 > - Run it locally: `node server.js` → `http://127.0.0.1:4173/demo.html`
 > - Long-form write-up: [WRITEUP.md](WRITEUP.md) · judge brief: [JUDGE-BRIEF.md](JUDGE-BRIEF.md)
 

@@ -1,6 +1,6 @@
 # PayPal AI Hackathon 2026 — fit assessment & 8-day submission plan
 
-> **Status (Nov 6, code review):** the core build is done and verified — **85/85 e2e pass**, live AI negotiation (`gpt-oss:20b`, `ai.used:true`) and live PayPal sandbox order creation verified, real sandbox capture/refund IDs recorded in `LIVE-TEST.md`, public GitHub repo with **Apache-2.0**, public SIM demo and all judge pages working. Remaining before submission: **record the <3:00 YouTube video**, fill the Devpost video URL/tags, and submit by **Nov 12, 2:00 PM PT**. The persistent SIM demo is live at https://tomscot-bit-settled.hf.space/start.html with a 6-hour keepalive workflow.
+> **Status (Nov 6, code review):** the core build is done and verified — **85/85 e2e pass**, live AI negotiation (`gpt-oss:20b`, `ai.used:true`) and live PayPal sandbox order creation verified, real sandbox capture/refund IDs recorded in `LIVE-TEST.md`, public GitHub repo with **Apache-2.0**, public SIM demo and all judge pages working. Remaining before submission: **record the <3:00 YouTube video**, fill the Devpost video URL/tags, and submit by **Nov 12, 2:00 PM PT**. The persistent SIM demo is live at https://cptlight-bit-settled.hf.space/start.html with a 6-hour keepalive workflow.
 
 *Rules as published by PayPal/Devpost (official page is Cloudflare-blocked to automated fetch; cross-checked against the PayPal developer blog and two organizer summaries). Verify the deadline on the Devpost page before submitting.*
 

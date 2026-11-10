@@ -25,6 +25,7 @@ const catalog = require('./lib/catalog');
 const adapters = require('./lib/adapters');
 const connectors = require('./lib/connectors');
 const ai = require('./lib/ai');
+const live = require('./lib/live');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -651,6 +652,7 @@ function handleListEvents(req, res, query) {
 
 function handleReset(req, res) {
   data.reset();
+  live.reset();
   catalog.resetUpdated();
   seedLedgerEvents();
   sendJson(res, 200, { ok: true });
@@ -794,6 +796,23 @@ async function handleContractAiAuto(req, res, id) {
   void body;
   const { contract, ai: aiInfo } = await contracts.aiAuto(id);
   sendJson(res, 200, { contract: contracts.publicContract(contract), ai: aiInfo, verification: contracts.verifyContract(contract) });
+}
+
+// ------------------------------------------------ live negotiation rooms --
+async function handleLiveCreate(req, res) {
+  const body = await readJson(req);
+  const session = await live.create(body);
+  sendJson(res, 201, { session });
+}
+
+function handleLiveList(req, res) {
+  sendJson(res, 200, { sessions: live.list() });
+}
+
+function handleLiveGet(req, res, id) {
+  const session = live.get(id);
+  if (!session) return fail(res, 404, 'LIVE_SESSION_NOT_FOUND', `no live session '${id}'`);
+  sendJson(res, 200, { session });
 }
 
 /** Public runtime config — never exposes secrets. */
@@ -1258,6 +1277,13 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 4 && seg[3] === 'passport' && method === 'GET') {
       return handleAgentPassport(req, res, seg[2]);
     }
+  }
+
+  // /api/live ... (public spectator rooms)
+  if (seg[1] === 'live') {
+    if (seg.length === 3 && seg[2] === 'sessions' && method === 'GET') return handleLiveList(req, res);
+    if (seg.length === 3 && seg[2] === 'sessions' && method === 'POST') return handleLiveCreate(req, res);
+    if (seg.length === 4 && seg[2] === 'sessions' && method === 'GET') return handleLiveGet(req, res, seg[3]);
   }
 
   // /api/contracts ...
