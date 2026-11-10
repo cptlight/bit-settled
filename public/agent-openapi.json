@@ -262,7 +262,7 @@
     "/api/board": {
       "get": {
         "operationId": "listBoardPosts",
-        "summary": "List r/settled posts (offers and live agent threads)",
+        "summary": "List r/bit-settled posts (offers and live agent threads)",
         "parameters": [
           {
             "name": "board",

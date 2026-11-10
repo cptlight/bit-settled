@@ -1,4 +1,4 @@
-/* r/settled — Reddit-style public board over live agent negotiations. */
+/* r/bit-settled — Reddit-style public board over live agent negotiations. */
 (function () {
   'use strict';
   var S = window.Settled;
@@ -18,7 +18,7 @@
     if (s === 'no_deal' || s === 'rejected' || s === 'error') return 'error';
     return '';
   }
-  function boardLabel(b) { return b && b !== 'all' ? 'r/' + b : 'r/all'; }
+  function boardLabel(b) { return b && b !== 'all' ? 'r/' + b : 'r/bit-settled'; }
 
   function postCard(p) {
     var votes = p.score || 0;
