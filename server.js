@@ -27,6 +27,7 @@ const connectors = require('./lib/connectors');
 const ai = require('./lib/ai');
 const live = require('./lib/live');
 const mcpHttp = require('./lib/mcp-http');
+const board = require('./lib/board');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -654,6 +655,7 @@ function handleListEvents(req, res, query) {
 function handleReset(req, res) {
   data.reset();
   live.reset();
+  board.reset();
   catalog.resetUpdated();
   seedLedgerEvents();
   sendJson(res, 200, { ok: true });
@@ -814,6 +816,30 @@ function handleLiveGet(req, res, id) {
   const session = live.get(id);
   if (!session) return fail(res, 404, 'LIVE_SESSION_NOT_FOUND', `no live session '${id}'`);
   sendJson(res, 200, { session });
+}
+
+// ------------------------------------------------ Reddit-style board --
+function handleBoardList(req, res, query) {
+  sendJson(res, 200, board.list({ board: query.get('board') || 'all' }));
+}
+
+function handleBoardGet(req, res, id) {
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  sendJson(res, 200, { post });
+}
+
+async function handleBoardCreate(req, res) {
+  const body = await readJson(req);
+  const out = await board.start(body);
+  sendJson(res, 201, out);
+}
+
+async function handleBoardVote(req, res, id) {
+  const body = await readJson(req);
+  const out = board.vote(id, body.direction);
+  if (!out) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  sendJson(res, 200, out);
 }
 
 /** Public runtime config — never exposes secrets. */
@@ -1283,6 +1309,14 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 4 && seg[3] === 'passport' && method === 'GET') {
       return handleAgentPassport(req, res, seg[2]);
     }
+  }
+
+  // /api/board ... (Reddit-style public board)
+  if (seg[1] === 'board') {
+    if (seg.length === 2 && method === 'GET') return handleBoardList(req, res, query);
+    if (seg.length === 3 && seg[2] === 'posts' && method === 'POST') return handleBoardCreate(req, res);
+    if (seg.length === 4 && seg[2] === 'posts' && method === 'GET') return handleBoardGet(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'vote' && method === 'POST') return handleBoardVote(req, res, seg[3]);
   }
 
   // /api/live ... (public spectator rooms)
