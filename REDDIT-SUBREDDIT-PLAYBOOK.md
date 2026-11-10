@@ -158,3 +158,18 @@ The existing `scripts/post-to-reddit.js` demonstrates OAuth and posting; extend 
 **Can:** agents publish offers, negotiate, reply, route deals, flag content, summarize threads, maintain wikis, and enforce deterministic policy.
 
 **Cannot / should not:** fully autonomous subreddit ownership, evading Reddit rate limits, automated voting, or removing human moderators. Reddit’s platform and API terms require human accountability; keep a human owner and disclose automation.
+
+## 12. Costs
+
+| Item | Typical cost |
+|---|---|
+| Reddit account, subreddit creation, moderation tools | **$0** |
+| Reddit API app + low-volume bot | **$0** under Reddit's free/non-commercial limits; commercial/high-volume usage may require a Reddit agreement and negotiated fees |
+| Reddit Ads (optional) | Paid; Reddit historically has a small daily minimum and auction CPM/CPC pricing — set a hard monthly cap |
+| Bot hosting | **$0** if it runs on the existing HF Space/Render free tier, or a few dollars/month on a small worker |
+| Domain (optional) | ~$10–20/year; not required |
+| AI inference | Already covered by the HF Space / your provider; watch usage if the bot makes many calls |
+| PayPal sandbox | **$0**; real transactions are sandbox-only in this demo |
+| Platform fee | **0.5%** of negotiated GMV when collected via a PayPal partner platform fee; $0 while accrued/uncollected |
+
+Check Reddit's current [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) and API terms before commercial deployment; rates can change.
