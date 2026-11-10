@@ -13,6 +13,21 @@ Create a Reddit **script app** at https://www.reddit.com/prefs/apps and a token 
 
 Do **not** share your Reddit password, client secret, or refresh token in the conversation. Put them in a local `.env` file or shell environment, run the script locally, then delete the token file.
 
+## 1b. App creation fields
+
+When Reddit asks for the app details, use:
+
+| Field | Value |
+|---|---|
+| **Name** | `bit-settled setup` |
+| **Type** | **script** |
+| **About URL** | `https://github.com/cptlight/bit-settled` (or `https://cptlight-bit-settled.hf.space/board.html`) |
+| **Redirect URI** | `http://localhost:8080/reddit-callback` |
+
+The redirect URI must be **exactly** what you later put in the OAuth authorization request. Nothing needs to be listening on that port: after Reddit redirects, the browser will show a connection error but the address bar contains the `code` parameter you need.
+
+Do not use a public production URL as the redirect URI unless you actually implement that callback.
+
 ## 2. Create a refresh token
 
 Use a local OAuth helper or the Reddit OAuth flow to obtain a **refresh token** for your own account. Store it only in an environment variable:
