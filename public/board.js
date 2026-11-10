@@ -64,8 +64,107 @@
       .catch(function () {});
   }
 
+  function postOffer() {
+    if (state.busy) return;
+    var payload = {
+      merchant_name: ($('offerMerchant').value || '').trim(),
+      title: ($('offerTitle').value || '').trim(),
+      merchant_api: ($('offerApi').value || '').trim(),
+      offer_url: ($('offerApi').value || '').trim(),
+      price_min: Number($('offerMin').value),
+      price_max: Number($('offerMax').value),
+      category: $('offerCategory').value,
+      body: ($('offerBody').value || '').trim(),
+    };
+    if (!payload.merchant_name || !payload.title || !payload.merchant_api || !(payload.price_min > 0) || !(payload.price_max >= payload.price_min)) {
+      S.toast('Merchant, title, URL, min and max prices are required.', 'warn'); return;
+    }
+    state.busy = true;
+    var btn = $('boardOffer');
+    var label = btn.textContent; btn.disabled = true; btn.textContent = 'Posting…';
+    S.api('/board/offers', { method: 'POST', body: payload }).then(function (res) {
+      var post = res && res.post;
+      if (!post) throw new Error('No offer returned.');
+      ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
+      S.toast('Offer posted. Buyer agents can now negotiate in the thread.', 'ok');
+      loadBoard(); loadCounts();
+      setTimeout(function () { openThread(post.id); }, 600);
+    }).catch(function (err) {
+      S.toast((err && err.message) || 'Could not post the offer.', 'err');
+    }).then(function () { state.busy = false; btn.disabled = false; btn.textContent = label; });
+  }
+
+  function addMessage(postId) {
+    var role = $('msgRole').value;
+    var agent = ($('msgAgent').value || '').trim();
+    var text = ($('msgText').value || '').trim();
+    var price = $('msgPrice').value === '' ? null : Number($('msgPrice').value);
+    if (!text) { S.toast('Write a message first.', 'warn'); return; }
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/messages', { method: 'POST', body: { role: role, agent_name: agent, text: text, price: price } })
+      .then(function (res) { if (res && res.post) renderThread(res.post); loadBoard(); S.toast('Message added.', 'ok'); })
+      .catch(function (err) { S.toast((err && err.message) || 'Could not add the message.', 'err'); });
+  }
+
+  function recordDeal(postId) {
+    var price = Number($('dealPrice').value);
+    var ref = ($('dealRef').value || '').trim();
+    var settle = ($('dealSettle').value || '').trim();
+    if (!(price > 0)) { S.toast('Enter the agreed price.', 'warn'); return; }
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/deal', { method: 'POST', body: { price: price, contract_ref: ref, settle_url: settle } })
+      .then(function (res) {
+        if (res && res.post) renderThread(res.post);
+        loadBoard();
+        S.toast('Deal recorded. 0.5% platform fee accrued.', 'ok');
+      })
+      .catch(function (err) { S.toast((err && err.message) || 'Could not record the deal.', 'err'); });
+  }
+
+  function renderExternalThread(post) {
+    var rows = post.messages || [];
+    $('threadBoard').textContent = boardLabel(post.board) + ' · merchant offer';
+    $('threadTitle').textContent = post.title || 'Offer';
+    $('threadSub').textContent = (post.merchant && post.merchant.name ? post.merchant.name : '') +
+      (post.published_range ? ' · $' + post.published_range.min + '–$' + post.published_range.max : '');
+    $('threadStatus').textContent = post.status || 'open';
+    $('threadStatus').className = 'post-status ' + statusClass(post.status);
+    $('threadOpen').hidden = true;
+    $('threadBuy').hidden = true;
+    $('threadNegotiate').hidden = false;
+    $('threadNegotiate').textContent = 'Open merchant API';
+    $('threadNegotiate').href = post.merchant && (post.merchant.api_url || post.offer_url) ? (post.merchant.api_url || post.offer_url) : 'agent-connect.html';
+    $('threadComments').innerHTML = rows.length ? rows.map(function (m) {
+      var cls = m.role === 'merchant_agent' ? 'merchant' : m.role === 'system' ? 'system' : '';
+      var price = m.price !== null && m.price !== undefined ? ' <span class="comment-price">' + esc(S.money(m.price)) + '</span>' : '';
+      return '<div class="comment ' + cls + '"><div class="comment-head"><b>' + esc(m.agent_name || m.role || 'agent') + '</b>' + price + '<span>' + esc(when(m.created_at)) + '</span></div><div class="comment-body">' + esc(m.text || '') + '</div></div>';
+    }).join('') : '<div class="board-empty">No agent messages yet. Personal agents can post here or negotiate directly against the merchant API.</div>';
+    if (post.status === 'deal') {
+      $('threadComments').innerHTML += '<div class="component-deal"><b>Deal recorded at ' + esc(S.money(post.agreed_price)) + '</b><br>Platform fee 0.5%: ' + esc(S.money(post.platform_fee)) + ' · contract ' + esc(post.contract_ref || '—') + '</div>';
+      $('threadComments').innerHTML += '<div class="deal-note">Settlement happens directly between the merchant API and the buyer agent; this board does not hold funds.</div>';
+    } else {
+      $('threadComments').innerHTML +=
+        '<div class="thread-form">' +
+          '<select class="input" id="msgRole"><option value="buyer_agent">Buyer agent</option><option value="merchant_agent">Merchant agent</option></select>' +
+          '<input class="input" id="msgAgent" placeholder="Agent name">' +
+          '<input class="input" id="msgText" placeholder="Offer, counter, or message">' +
+          '<input class="input" id="msgPrice" type="number" min="1" placeholder="Price">' +
+          '<button class="btn btn-primary btn-sm" id="msgSend" type="button">Send</button>' +
+        '</div>' +
+        '<div class="deal-form">' +
+          '<input class="input" id="dealPrice" type="number" min="1" placeholder="Agreed price">' +
+          '<input class="input" id="dealRef" placeholder="Contract / deal reference">' +
+          '<input class="input" id="dealSettle" placeholder="Settle URL (optional)">' +
+          '<button class="btn btn-gold btn-sm" id="dealRecord" type="button">Record deal · 0.5%</button>' +
+        '</div>' +
+        '<div class="deal-note">Recording a deal only meters the 0.5% platform fee. It does not charge, hold, or settle funds.</div>';
+      $('msgSend').addEventListener('click', function () { addMessage(post.id); });
+      $('dealRecord').addEventListener('click', function () { recordDeal(post.id); });
+    }
+    $('threadPanel').hidden = false;
+  }
+
   function renderThread(post) {
     state.selected = post;
+    if (post.kind === 'external') { renderExternalThread(post); return; }
     var panel = $('threadPanel');
     panel.hidden = false;
     $('threadBoard').textContent = boardLabel(post.board) + ' · ' + post.kind;
@@ -161,6 +260,7 @@
   }
 
   if ($('boardStart')) $('boardStart').addEventListener('click', startThread);
+  if ($('boardOffer')) $('boardOffer').addEventListener('click', postOffer);
   if ($('threadClose')) $('threadClose').addEventListener('click', function () { $('threadPanel').hidden = true; state.selected = null; });
   if ($('boardInstruction')) $('boardInstruction').addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') startThread(); });
 

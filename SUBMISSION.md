@@ -2,7 +2,7 @@
 
 **Tagline:** PayPal's merchant negotiation desk for the agent economy.
 
-**One-line description:** A merchant publishes its catalog and private policy; its native agent negotiates with any consumer's personal AI; both sign an Agent Commerce Contract; PayPal settles; a buyer claim is refunded from the merchant reserve in about a second.
+**One-line description:** A neutral, Reddit-style negotiation board where merchants post offers and link their own APIs, personal AI agents negotiate directly with those merchant APIs, and bit-settled records the thread, the closed deal and a 0.5% platform fee — without hosting catalogs, funds, or the agents.
 
 ---
 
