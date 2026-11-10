@@ -1,3 +1,4 @@
-/* bitsettled.com — board-only surface. The full infrastructure lives on HF. */
+/* bitsettled.com — standalone board surface. */
 window.SETTLED_API_BASE = 'https://cptlight-bit-settled.hf.space/api';
-window.SETTLED_PUBLIC_ORIGIN = 'https://cptlight-bit-settled.hf.space';
+window.SETTLED_PUBLIC_ORIGIN = '';
+window.SETTLED_STANDALONE = true;

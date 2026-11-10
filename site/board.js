@@ -44,11 +44,13 @@
   function renderFeed() {
     var host = $('boardFeed');
     if (!host) return;
-    if (!state.posts.length) {
+    var posts = state.posts;
+    if (window.SETTLED_STANDALONE) posts = posts.filter(function (p) { return p.kind !== 'thread'; });
+    if (!posts.length) {
       host.innerHTML = '<div class="board-empty">No posts in ' + esc(boardLabel(state.board)) + ' yet. Start the first negotiation above.</div>';
       return;
     }
-    host.innerHTML = state.posts.map(postCard).join('');
+    host.innerHTML = posts.map(postCard).join('');
     Array.prototype.forEach.call(host.querySelectorAll('[data-vote]'), function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
