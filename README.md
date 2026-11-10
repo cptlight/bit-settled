@@ -24,6 +24,7 @@ npm test                 # e2e API tests (spawns its own server, port 4400)
 | URL | What it shows |
 |---|---|
 | `http://127.0.0.1:4173/start.html` | **Demo hub** — one page linking every surface and the machine endpoints. **Start here.** |
+| `http://127.0.0.1:4173/live.html` | **Live agent room** — instruct a personal AI and watch it negotiate in public |
 | `http://127.0.0.1:4173/demo.html` | **Live demo console** — the 5-step hackathon story with scorecard and JSON log. **Start here for a demo.** |
 | `http://127.0.0.1:4173/merchant.html` | **Merchant agent console** — catalog, private sell range, public range, auto-accept, terms, editable agent name/tone/greeting, agent/import setup |
 | `http://127.0.0.1:4173/market.html` | **Negotiation index** — categories, search, budget, published ranges, merchant trust, protection, "Negotiate with agent" |

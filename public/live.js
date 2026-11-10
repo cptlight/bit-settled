@@ -22,6 +22,7 @@
     var s = String(status || '').toLowerCase();
     if (s === 'accepted' || s === 'done' || s === 'paid') return 'accepted';
     if (s === 'negotiating' || s === 'running') return 'negotiating';
+    if (s === 'no_deal' || s === 'rejected' || s === 'error') return 'error';
     return s;
   }
   function setBusy(btn, busy, label) {
@@ -85,7 +86,7 @@
         '</div>';
       }).join('');
     }
-    $('liveFoot').textContent = session.status === 'accepted'
+    $('liveFoot').textContent = session.status === 'no_deal' ? 'No deal inside the stated budget. Try a higher budget.' : session.status === 'accepted'
       ? 'Negotiation complete · signed contract ' + (session.contract_id || '') + ' · agreed ' + S.money(session.agreed_price)
       : 'Anyone with this link can watch. The merchant’s private floor is not in this transcript.';
     if (session.id) {
