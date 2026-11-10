@@ -16,3 +16,5 @@ services:
         value: "0"
       - key: AI_PROVIDER
         value: none
+      - key: PLATFORM_FEE_BPS
+        value: "50"

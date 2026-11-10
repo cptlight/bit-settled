@@ -616,6 +616,8 @@
       ['order id', '<span class="mono">' + esc(o.id || '—') + '</span>'],
       ['agreed amount', esc(money(o.amount))],
       ['payment id', '<span class="mono">' + esc(p.id || o.payment_id || '—') + '</span>'],
+      ['platform fee · 0.5%', esc(money(o.platform_fee || 0)) + ' <span class="tiny muted">' + (o.platform_fee_collected ? 'collected' : 'accrued') + '</span>'],
+      ['merchant net', esc(money(o.merchant_net || 0))],
       ['rail', esc(p.mode || 'sim') + (o.simulated ? ' · SIM forced' : '')],
       ['status', esc(o.status || '—')],
       ['contract hash', state.acc && state.acc.hash ? '<span class="mono">' + esc(S.shortHash(state.acc.hash, 22)) + '</span>' : '—']

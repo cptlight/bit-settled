@@ -51,6 +51,10 @@ const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const MAX_BODY = 1024 * 1024; // 1 MiB
+const PLATFORM_FEE_BPS = (() => {
+  const n = Number(process.env.PLATFORM_FEE_BPS);
+  return Number.isFinite(n) && n >= 0 && n <= 1000 ? n : 50; // 0.50% default
+})();
 
 const CLAIM_REASONS = new Set(['not_delivered', 'not_as_described', 'damaged']);
 const TIERS = ['A', 'B', 'C', 'D'];
@@ -318,6 +322,9 @@ async function handleCreateOrder(req, res, merchantId) {
   // "Run full demo" path never depends on the PayPal sandbox being reachable.
   const forceSim = body.simulate === true;
   const liveRail = paypal.isLive() && !forceSim;
+  const platform_fee = round2((amount * PLATFORM_FEE_BPS) / 10000);
+  const merchant_net = round2(amount - platform_fee);
+  const platform_fee_collected = liveRail && process.env.PAYPAL_PLATFORM_FEES === '1' && Boolean(process.env.PAYPAL_PLATFORM_FEE_PAYEE);
 
   let paymentResult;
   try {
@@ -326,6 +333,8 @@ async function handleCreateOrder(req, res, merchantId) {
         amount,
         currency: 'USD',
         returnUrl: `${process.env.PUBLIC_BASE_URL || `http://${HOST === '0.0.0.0' ? '127.0.0.1' : HOST}:${PORT}`}/store.html?merchant=${encodeURIComponent(merchantId)}`,
+        platformFee: platform_fee,
+        platformFeeBps: PLATFORM_FEE_BPS,
       });
     } else {
       paymentResult = { id: 'SIM-' + randHex(8), approval_url: null, simulated: true };
@@ -342,6 +351,10 @@ async function handleCreateOrder(req, res, merchantId) {
     amount,
     fee_bps,
     fee,
+    platform_fee_bps: PLATFORM_FEE_BPS,
+    platform_fee,
+    merchant_net,
+    platform_fee_collected,
     protection: prot,
     status: liveRail ? 'pending' : 'paid',
     payment_id: paymentResult.id,
@@ -368,6 +381,9 @@ async function handleCreateOrder(req, res, merchantId) {
     amount,
     fee_bps,
     fee,
+    platform_fee_bps: PLATFORM_FEE_BPS,
+    platform_fee,
+    merchant_net,
     mode: prot.mode,
     cap: prot.cap,
     payment_id: order.payment_id,
@@ -380,6 +396,10 @@ async function handleCreateOrder(req, res, merchantId) {
   const receipt = {
     order_id: order.id,
     paid: amount,
+    platform_fee_bps: PLATFORM_FEE_BPS,
+    platform_fee,
+    merchant_net,
+    platform_fee_collected,
     captured_at: order.captured_at,
     credential_hash: ledger.credentialHash(bundle),
   };
@@ -859,6 +879,7 @@ function handleConfig(req, res) {
       provider: aiCfg.provider,
       model: aiCfg.model,
     },
+    platform_fee_bps: PLATFORM_FEE_BPS,
   });
 }
 

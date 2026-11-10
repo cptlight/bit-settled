@@ -19,6 +19,10 @@ Buyers don't trust unfamiliar checkout. AI agents can now pay, but they cannot r
 5. **PayPal settlement + protection** — risk-priced protection (35/90/150 bps by tier), a PayPal order, capture, and a signed Agent Commerce Contract. Live sandbox mode creates real PayPal order/capture IDs; the default SIM mode is deterministic.
 6. **Instant recourse** — a buyer or agent files a claim with evidence; an AI explainer recommends approve/review/deny; the rule engine pays from the merchant reserve through a PayPal refund, updating the merchant's score and tier.
 
+## How we make money
+
+A **0.50% platform fee** on each negotiated transaction (merchant-paid), recorded on every order and receipt. At $10M GMV that is $50k/y; at $100M, $500k/y. Collection uses PayPal marketplace platform fees for a partner account; the demo records the fee as accrued until the partner rail is enabled.
+
 ## How we built it
 
 - **Zero-dependency Node ≥20** server: `http`, `crypto`, global `fetch`; no npm packages, no build step.

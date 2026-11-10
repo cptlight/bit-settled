@@ -432,6 +432,8 @@
         '<div class="receipt-cell"><div class="receipt-label">Order</div><div class="receipt-value">' + S.esc(receipt.order_id || order.id || '—') + '</div></div>' +
         '<div class="receipt-cell"><div class="receipt-label">Paid</div><div class="receipt-value money">' + S.esc(S.money(receipt.paid !== undefined ? receipt.paid : order.amount)) + '</div></div>' +
         '<div class="receipt-cell"><div class="receipt-label">Payment id</div><div class="receipt-value">' + S.esc((payment && payment.id) || order.payment_id || '—') + '</div></div>' +
+        '<div class="receipt-cell"><div class="receipt-label">Platform fee (0.5%)</div><div class="receipt-value money">' + S.esc(S.money(receipt.platform_fee || 0)) + ' <span class="tiny muted">' + (receipt.platform_fee_collected ? 'collected' : 'accrued') + '</span></div></div>' +
+        '<div class="receipt-cell"><div class="receipt-label">Merchant net</div><div class="receipt-value money">' + S.esc(S.money(receipt.merchant_net !== undefined ? receipt.merchant_net : order.merchant_net || 0)) + '</div></div>' +
         '<div class="receipt-cell"><div class="receipt-label">Captured</div><div class="receipt-value">' + S.esc(S.dateFmt(receipt.captured_at)) + '</div></div>' +
         '<div class="receipt-cell" style="grid-column:1/-1"><div class="receipt-label">Credential hash</div><div class="receipt-value">' + S.esc(receipt.credential_hash || '—') + '</div></div>' +
       '</div>' +

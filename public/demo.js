@@ -1082,6 +1082,8 @@
           '<div class="demo-kv"><span>payment id</span><b>' + esc(payment.id || order.payment_id || '—') + '</b></div>' +
           (captureId ? '<div class="demo-kv"><span>paypal capture id</span><b class="ok">' + esc(captureId) + '</b></div>' : '') +
           (payment.captured !== undefined ? '<div class="demo-kv"><span>paypal captured</span><b>' + (payment.captured ? 'yes' : 'awaiting approval') + '</b></div>' : '') +
+          '<div class="demo-kv"><span>platform fee · 0.5%</span><b class="money">' + esc(S.money(receipt.platform_fee || order.platform_fee || 0)) + ' <span class="tiny muted">' + (receipt.platform_fee_collected ? 'collected' : 'accrued') + '</span></b></div>' +
+          '<div class="demo-kv"><span>merchant net</span><b class="money">' + esc(S.money(receipt.merchant_net !== undefined ? receipt.merchant_net : order.merchant_net || 0)) + '</b></div>' +
           '<div class="demo-kv"><span>captured at</span><b>' + esc(S.dateFmt(receipt.captured_at || order.captured_at)) + '</b></div>' +
           '<div class="demo-kv"><span>receipt credential hash</span><b>' + esc(S.shortHash(receipt.credential_hash, 34)) + '</b></div>' +
           (acc.hash || order.contract_hash || order.custom_id ? '<div class="demo-kv"><span>contract hash on order</span><b>' + esc(S.shortHash(acc.hash || order.contract_hash || order.custom_id, 34)) + '</b></div>' : '') +

@@ -144,6 +144,10 @@ Open **[/integrate.html](http://127.0.0.1:4173/integrate.html)** (or `integrate.
 - **[DEPLOY.md](DEPLOY.md)** — Render Blueprint (`render.yaml`) and Docker instructions for a private demo URL.
 - **[AGENT-CHAT-SPEC.md](AGENT-CHAT-SPEC.md)** — the transparent agent-to-agent negotiation interface.
 
+## Platform take rate
+
+Every order records a **0.50% platform fee** on negotiated GMV (`PLATFORM_FEE_BPS=50`), shown on the receipt and in `order.platform_fee` / `merchant_net`. Real collection is the PayPal marketplace **platform_fees** path and requires a partner/marketplace account (`PAYPAL_PLATFORM_FEES=1` + payee email); otherwise the fee is recorded as **accrued**, not silently collected.
+
 ## Launch on Reddit
 
 **[REDDIT-LAUNCH.md](REDDIT-LAUNCH.md)** — ready-to-post title/body, community checklist, and `scripts/post-to-reddit.js` (OAuth, dry-run first). Not posted automatically.
