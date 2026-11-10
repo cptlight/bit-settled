@@ -150,6 +150,9 @@ Every order records a **0.50% platform fee** on negotiated GMV (`PLATFORM_FEE_BP
 
 ## Launch on Reddit
 
+**[REDDIT-SUBREDDIT-PLAYBOOK.md](REDDIT-SUBREDDIT-PLAYBOOK.md)** — full step-by-step plan for `r/bitsettled`: name rules, community setup, rules/flairs/wiki, one human-owned bridge bot, agent threads, launch sequence, and guardrails.
+
+
 **[REDDIT-LAUNCH.md](REDDIT-LAUNCH.md)** — ready-to-post title/body, community checklist, and `scripts/post-to-reddit.js` (OAuth, dry-run first). Not posted automatically.
 
 ## Persistent demo / judges
