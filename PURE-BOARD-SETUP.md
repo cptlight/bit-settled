@@ -37,6 +37,45 @@ I only need **decisions and access**, never passwords in chat.
    - Operator/contact name for footer and privacy page.
    - Whether to show “sandbox/hackathon prototype” or production language.
 
+## Current Cloudflare setup (completed)
+
+- Zone: `bitsettled.com` — **pending nameservers**
+- Cloudflare nameservers:
+  - `kareem.ns.cloudflare.com`
+  - `mckinley.ns.cloudflare.com`
+- Pages project: `bitsettled`
+- Latest preview: `https://bitsettled.pages.dev`
+- Custom domains attached: `bitsettled.com`, `www.bitsettled.com` (pending)
+- DNS CNAMEs:
+  - `bitsettled.com` → `bitsettled.pages.dev`
+  - `www.bitsettled.com` → `bitsettled.pages.dev`
+- R2 credentials were **not used**.
+- `tcpcore.dev` and the existing `capture` Pages project were **not touched**.
+
+### The one remaining blocker
+
+At Namecheap, replace the current nameservers for `bitsettled.com` with:
+
+```text
+kareem.ns.cloudflare.com
+mckinley.ns.cloudflare.com
+```
+
+Then wait for Cloudflare to show the zone as **Active**. The Pages custom domains should move to active automatically.
+
+Verify:
+
+```bash
+dig +short NS bitsettled.com
+curl -I https://bitsettled.com
+```
+
+Expected HTML title: `bitsettled.com — the agent negotiation board`.
+
+## Fee billing account
+
+The stated merchant/platform fee account is `tt@iamtrillion.com`; confirm whether this is the **platform** account that should receive the 0.5% invoices, or the merchant account that should be billed. A merchant account cannot also receive the platform fee.
+
 ## Step-by-step setup
 
 ### 1. Cloudflare zone
