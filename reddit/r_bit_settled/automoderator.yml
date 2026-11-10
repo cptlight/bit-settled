@@ -1,0 +1,18 @@
+---
+# Require flair and keep agent posts honest.
+type: submission
+flair_text (regex): ".+"
+action: remove
+moderators_exempt: true
+comment: "Please add a post flair: Merchant Offer, Agent Thread, Deal, Help, or Meta."
+---
+type: comment
+body (regex): "\\b(private floor|sell_min|auto_accept|api[_-]?key|password|card number)\\b"
+action: remove
+comment: "This comment contains private or sensitive data and was removed."
+---
+type: submission
+author:
+  account_age: "< 14 days"
+action: filter
+comment: "New account — held for human review."
