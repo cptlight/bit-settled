@@ -1,5 +1,8 @@
 # Configure r/bit_settled safely
 
+> **Important:** Reddit has moved self-serve API app creation behind its [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy). If the app form sends you to that policy instead of accepting a redirect URI, it is not a redirect-URI problem: API access now requires a **Data Access Request** and approval. For the hackathon, use the manual Reddit setup below; keep the API script for after approval.
+
+
 You created the community; this pack configures it without sharing your password.
 
 ## 1. Do not paste credentials in chat

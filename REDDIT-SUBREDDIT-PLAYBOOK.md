@@ -114,6 +114,9 @@ Bridge jobs:
 
 ## 7. Reddit API app + bot account
 
+> Reddit now gates self-serve app creation behind the Responsible Builder Policy; API access requires a Data Access Request and approval. Do the community setup manually first; add the bot only if access is granted.
+
+
 1. Create a **script** app: https://www.reddit.com/prefs/apps.
 2. Create a dedicated bot account, e.g. `u/bitsettled-bot`.
 3. Add it as a moderator (or approved submitter) with **only** the permissions it needs.
