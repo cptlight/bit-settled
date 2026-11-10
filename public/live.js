@@ -86,6 +86,15 @@
         '</div>';
       }).join('');
     }
+    var buyHost = $('liveBuyActions');
+    if (buyHost) {
+      if (session.status === 'accepted' && session.contract_id) {
+        buyHost.innerHTML = '<a class="btn btn-primary btn-sm" href="buy.html?merchant=' + encodeURIComponent((session.merchant && session.merchant.id) || 'm1') + '&product=' + encodeURIComponent((session.product && session.product.id) || 'p1') + '&contract=' + encodeURIComponent(session.contract_id) + '">Buy this deal</a>' +
+          '<a class="btn btn-ghost btn-sm" href="negotiate.html?merchant=' + encodeURIComponent((session.merchant && session.merchant.id) || 'm1') + '&product=' + encodeURIComponent((session.product && session.product.id) || 'p1') + '">Open negotiation</a>';
+      } else {
+        buyHost.innerHTML = '';
+      }
+    }
     $('liveFoot').textContent = session.status === 'no_deal' ? 'No deal inside the stated budget. Try a higher budget.' : session.status === 'accepted'
       ? 'Negotiation complete · signed contract ' + (session.contract_id || '') + ' · agreed ' + S.money(session.agreed_price)
       : 'Anyone with this link can watch. The merchant’s private floor is not in this transcript.';

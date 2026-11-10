@@ -366,6 +366,79 @@
           }
         }
       }
+    },
+    "/api/agent/purchase": {
+      "post": {
+        "operationId": "agentPurchase",
+        "summary": "Negotiate and create the order in one call; returns PayPal sandbox approval URL or SIM order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "instruction"
+                ],
+                "properties": {
+                  "instruction": {
+                    "type": "string"
+                  },
+                  "merchant_id": {
+                    "type": "string"
+                  },
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "simulate": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Negotiated order + payment"
+          },
+          "400": {
+            "description": "Invalid instruction"
+          }
+        }
+      }
+    },
+    "/api/paypal/capture": {
+      "post": {
+        "operationId": "captureApprovedOrder",
+        "summary": "Capture an approved PayPal sandbox order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "order_id"
+                ],
+                "properties": {
+                  "order_id": {
+                    "type": "string"
+                  },
+                  "paypal_order_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Captured order"
+          }
+        }
+      }
     }
   },
   "components": {

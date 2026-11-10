@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bit-settled — buy this deal</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="paypal-theme.css">
+<style>
+  .buy-wrap{max-width:860px;margin:0 auto;padding:28px 0 50px}
+  .buy-title{font-size:clamp(30px,5vw,48px);line-height:1.05;letter-spacing:-.04em;margin:8px 0 10px}
+  .buy-title em{color:var(--emerald);font-style:normal}
+  .buy-sub{font-size:12.5px;line-height:1.65;color:var(--muted);max-width:650px}
+  .buy-card{margin-top:16px;padding:16px}
+  .buy-facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:12px}
+  .buy-fact{background:var(--surface);padding:9px 11px}
+  .buy-label{font:700 8px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2)}
+  .buy-value{font:650 12px var(--mono);color:var(--ink-2);margin-top:3px;overflow-wrap:anywhere}
+  .buy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .buy-note{font-size:10.5px;line-height:1.6;color:var(--muted-2);margin-top:12px;border-left:2px solid var(--emerald-line);padding-left:10px}
+  @media(max-width:560px){.buy-facts{grid-template-columns:1fr}}
+</style>
+</head>
+<body class="paypal-theme" data-page="buy">
+<div class="bg" aria-hidden="true"></div>
+<header class="topnav"><div class="topnav-in">
+  <a class="brand" href="start.html"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-copy"><b>bit-settled</b><small>trust settlement</small></span></a>
+  <nav class="nav"><a href="start.html">Demo hub</a><a href="board.html">r/bit-settled</a><a href="live.html">Live room</a><a href="negotiate.html?merchant=m1&product=p1">Negotiate</a></nav>
+  <div class="nav-side"><span class="env-pill"><span class="dot"></span><span id="envLabel">LIVE</span></span></div>
+</div></header>
+<main class="shell buy-wrap">
+  <div id="apiError" class="panel api-error" hidden></div>
+  <section class="buy-card panel" id="buyCard">
+    <div class="eyebrow">Post-negotiation · sandbox checkout</div>
+    <h1 class="buy-title">Buy the <em>agreed deal.</em></h1>
+    <p class="buy-sub">The personal agent negotiated this deal; this page creates the order at the signed contract price. PayPal sandbox approval is the only human step. No typing.</p>
+    <div id="buyBody" class="buy-facts"><div class="buy-fact"><div class="buy-label">Status</div><div class="buy-value">Loading…</div></div></div>
+    <div class="buy-actions" id="buyActions"></div>
+    <div class="buy-note" id="buyNote">The contract hash fixes the price and terms before payment. The platform fee is 0.5% of the agreed amount.</div>
+  </section>
+  <div class="footer"><span>bit-settled — reputation settles with the payment.</span><a href="board.html">Board</a><a href="live.html">Live room</a></div>
+</main>
+<script src="app.js"></script>
+<script src="buy.js"></script>
+</body>
+</html>

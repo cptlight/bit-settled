@@ -168,6 +168,34 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'agent_purchase',
+    description: 'One-call personal-agent purchase: interpret an instruction, negotiate inside a mandate, and create the order (live PayPal approval URL or SIM order).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        instruction: { type: 'string', description: 'Plain-language request, e.g. Get me the Aurora One headphones under $250.' },
+        merchant_id: { type: 'string', description: 'Merchant id (default m1)' },
+        product_id: { type: 'string', description: 'Optional product id; otherwise the agent chooses' },
+        simulate: { type: 'boolean', description: 'Force the SIM rail for a deterministic test' },
+      },
+      required: ['instruction'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'order_capture',
+    description: 'Capture an approved PayPal sandbox order after the buyer approves it.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        order_id: { type: 'string' },
+        paypal_order_id: { type: 'string' },
+      },
+      required: ['order_id'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 const TOOL_MAP = new Map(TOOLS.map((t) => [t.name, t]));
@@ -221,6 +249,22 @@ const RUNNERS = {
     return rest(`/api/merchants/${encodeURIComponent(args.merchant_id)}/orders`, {
       method: 'POST',
       body,
+    });
+  },
+  async agent_purchase(args) {
+    const body = { instruction: args.instruction };
+    if (args.merchant_id) body.merchant_id = args.merchant_id;
+    if (args.product_id) body.product_id = args.product_id;
+    if (args.simulate === true) body.simulate = true;
+    return rest('/api/agent/purchase', { method: 'POST', body });
+  },
+  async order_capture(args) {
+    return rest('/api/paypal/capture', {
+      method: 'POST',
+      body: {
+        order_id: args.order_id,
+        ...(args.paypal_order_id ? { paypal_order_id: args.paypal_order_id } : {}),
+      },
     });
   },
   async claim_open(args) {

@@ -27,6 +27,8 @@ node server.js          # http://127.0.0.1:4173
 | `negotiate_auto` | `contract_id` | `POST /api/contracts/{id}/ai-auto` |
 | `order_create` | `merchant_id, product_id, contract_id, agent_id?, simulate?` | `POST /api/merchants/{id}/orders` |
 | `claim_open` | `order_id, reason?, evidence?, use_ai?` | `POST /api/orders/{id}/claim` |
+| `agent_purchase` | `instruction, merchant_id?, product_id?, simulate?` | `POST /api/agent/purchase` |
+| `order_capture` | `order_id, paypal_order_id?` | `POST /api/paypal/capture` |
 
 Every tool returns `{ content: [{ type: "text", text: "<JSON>" }], isError }`.
 A failed tool call sets `isError: true` and returns
@@ -50,7 +52,7 @@ or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 }
 ```
 
-Restart Claude Desktop; the seven tools appear under the tools menu.
+Restart Claude Desktop; the nine tools appear under the tools menu.
 
 ## Cursor
 

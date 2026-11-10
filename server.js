@@ -28,6 +28,7 @@ const ai = require('./lib/ai');
 const live = require('./lib/live');
 const mcpHttp = require('./lib/mcp-http');
 const board = require('./lib/board');
+const agentBuy = require('./lib/agent-buy');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -862,6 +863,13 @@ async function handleBoardVote(req, res, id) {
   sendJson(res, 200, out);
 }
 
+// ------------------------------------------------ one-call agent purchase --
+async function handleAgentPurchase(req, res) {
+  const body = await readJson(req);
+  const out = await agentBuy.purchase(body);
+  sendJson(res, 200, out);
+}
+
 /** Public runtime config — never exposes secrets. */
 function handleConfig(req, res) {
   const aiCfg = ai.config();
@@ -1092,6 +1100,8 @@ function handleAgentManifest(req, res) {
       negotiate: '/api/contracts',
       auto: '/api/contracts/{id}/ai-auto',
       order: '/api/merchants/{id}/orders',
+      purchase: '/api/agent/purchase',
+      capture: '/api/paypal/capture',
       claim: '/api/orders/{id}/claim',
     },
     tools: [
@@ -1101,6 +1111,8 @@ function handleAgentManifest(req, res) {
       { name: 'negotiate.start', endpoint: 'POST /api/contracts' },
       { name: 'negotiate.auto', endpoint: 'POST /api/contracts/{id}/ai-auto' },
       { name: 'order.create', endpoint: 'POST /api/merchants/{id}/orders' },
+      { name: 'purchase.one_call', endpoint: 'POST /api/agent/purchase' },
+      { name: 'payment.capture', endpoint: 'POST /api/paypal/capture' },
       { name: 'claim.open', endpoint: 'POST /api/orders/{id}/claim' },
     ],
   });
@@ -1321,6 +1333,11 @@ async function routeApi(req, res, method, pathname, query) {
       if (seg[3] === 'fulfill') return handleFulfill(req, res, orderId);
       if (seg[3] === 'claim') return handleClaim(req, res, orderId);
     }
+  }
+
+  // /api/agent/purchase — negotiate + create the order in one call.
+  if (seg.length === 3 && seg[1] === 'agent' && seg[2] === 'purchase' && method === 'POST') {
+    return handleAgentPurchase(req, res);
   }
 
   // /api/agents ...

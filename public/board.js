@@ -90,9 +90,14 @@
     if (post.room) {
       $('threadOpen').href = 'live.html?session=' + encodeURIComponent(post.room.id);
       $('threadOpen').hidden = false;
+      if (post.room && post.room.contract_id) {
+        $('threadBuy').href = 'buy.html?merchant=' + encodeURIComponent((post.merchant && post.merchant.id) || 'm1') + '&product=' + encodeURIComponent((post.product && post.product.id) || 'p1') + '&contract=' + encodeURIComponent(post.room.contract_id);
+        $('threadBuy').hidden = false;
+      } else { $('threadBuy').hidden = true; }
       $('threadNegotiate').hidden = false;
     } else {
       $('threadOpen').hidden = true;
+      $('threadBuy').hidden = true;
       $('threadNegotiate').href = 'negotiate.html?merchant=' + encodeURIComponent((post.merchant && post.merchant.id) || 'm1') + '&product=' + encodeURIComponent((post.product && post.product.id) || 'p1');
       $('threadNegotiate').hidden = false;
       if (post.rooms && post.rooms.length) {

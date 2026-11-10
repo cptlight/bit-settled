@@ -94,15 +94,18 @@ curl -s -X POST https://cptlight-bit-settled.hf.space/api/contracts \
         <div class="connect-step"><span class="connect-n">2</span><div><b>POST</b> <span class="mono">/api/contracts/:id/offers</span> with <span class="mono">{from:"buyer",price}</span>.</div></div>
         <div class="connect-step"><span class="connect-n">3</span><div><b>POST</b> <span class="mono">/accept</span> when the standing price is inside your mandate.</div></div>
       </div>
+      <div class="connect-code" data-copy-auto data-copy-label="One-call purchase">curl -s -X POST https://cptlight-bit-settled.hf.space/api/agent/purchase \
+  -H 'Content-Type: application/json' \
+  -d '{"instruction":"Get me the Aurora One headphones under $250.","simulate":false}'<button type="button" data-copy-btn>Copy</button></div>
       <a class="connect-link" href="/agent-openapi.json" target="_blank" rel="noopener">Agent OpenAPI →</a>
     </section>
 
     <section class="panel connect-card">
       <div class="connect-kicker">MCP · remote</div>
       <h2>Add bit-settled as an MCP server</h2>
-      <p>MCP clients can call the same seven tools over HTTP. Point the client at the endpoint below; no local install is required.</p>
+      <p>MCP clients can call the same nine tools over HTTP. Point the client at the endpoint below; no local install is required.</p>
       <div class="connect-code" data-copy-auto data-copy-label="MCP endpoint">https://cptlight-bit-settled.hf.space/mcp<button type="button" data-copy-btn>Copy</button></div>
-      <div class="connect-badge">tools: index_manifest · index_feed · index_search · negotiate_start · negotiate_auto · order_create · claim_open</div>
+      <div class="connect-badge">tools: index_manifest · index_feed · index_search · negotiate_start · negotiate_auto · order_create · claim_open · agent_purchase · order_capture</div>
       <p style="margin-top:10px">For a desktop client that only supports stdio, run the repo's <span class="mono">mcp/server.js</span> with <span class="mono">SETTLED_BASE_URL</span> pointing at this host.</p>
       <a class="connect-link" href="https://github.com/cptlight/bit-settled/blob/main/mcp/README.md" target="_blank" rel="noopener">MCP README →</a>
     </section>
