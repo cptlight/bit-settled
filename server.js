@@ -875,7 +875,7 @@ async function handleBoardFeeOrder(req, res, id) {
   const fee = Number(post.platform_fee) || 0;
   if (!(fee > 0)) return fail(res, 409, 'NO_FEE', 'no platform fee on this deal');
   if (post.fee_collected) return sendJson(res, 200, { post, already_paid: true });
-  const order = await paypal.createOrder({ amount: fee, currency: 'USD', returnUrl: (process.env.PUBLIC_BASE_URL || '') + '/fee.html?post=' + encodeURIComponent(id) });
+  const order = await paypal.createOrder({ amount: fee, currency: 'USD', returnUrl: (process.env.PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || '') + '/fee.html?post=' + encodeURIComponent(id) });
   sendJson(res, 200, { post, fee_order_id: order.id, approval_url: order.approval_url || null, amount: fee, mode: paypal.mode() });
 }
 
