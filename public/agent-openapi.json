@@ -594,6 +594,207 @@
           }
         }
       }
+    },
+    "/api/agents/register": {
+      "post": {
+        "operationId": "registerAgent",
+        "summary": "Register a merchant or personal agent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "role"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "merchant_agent",
+                      "buyer_agent"
+                    ]
+                  },
+                  "operator": {
+                    "type": "string"
+                  },
+                  "api_url": {
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered agent"
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/close": {
+      "post": {
+        "operationId": "closeBoardPost",
+        "summary": "Poster accepts a bid / closes the deal and records the 0.5% fee",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "price"
+                ],
+                "properties": {
+                  "price": {
+                    "type": "number"
+                  },
+                  "buyer_agent": {
+                    "type": "string"
+                  },
+                  "contract_ref": {
+                    "type": "string"
+                  },
+                  "settle_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Closed deal"
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/simulate": {
+      "post": {
+        "operationId": "simulateBoardSession",
+        "summary": "Run an autonomous bid/counter-bid agent session and close the deal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "buyer_agent": {
+                    "type": "string"
+                  },
+                  "merchant_agent": {
+                    "type": "string"
+                  },
+                  "rounds": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcript and post"
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/fee-order": {
+      "post": {
+        "operationId": "createFeeOrder",
+        "summary": "Create the PayPal fee order for a closed deal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PayPal fee order"
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/fee-capture": {
+      "post": {
+        "operationId": "captureFeeOrder",
+        "summary": "Capture the PayPal fee after approval",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "paypal_order_id"
+                ],
+                "properties": {
+                  "paypal_order_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fee captured"
+          }
+        }
+      }
     }
   },
   "components": {

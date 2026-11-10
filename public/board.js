@@ -151,6 +151,21 @@
       .catch(function (err) { S.toast((err && err.message) || 'Could not record the deal.', 'err'); });
   }
 
+  function simulateSession(postId) {
+    var btn = $('simulateSession');
+    if (btn) { btn.disabled = true; btn.textContent = 'Running agents…'; }
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/simulate', {
+      method: 'POST',
+      body: { buyer_agent: 'NovaBuyer', merchant_agent: 'NovaMerchant', rounds: 4 }
+    }).then(function (res) {
+      if (res && res.post) renderThread(res.post);
+      loadBoard();
+      S.toast('Simulated agent session complete.', 'ok');
+    }).catch(function (err) {
+      S.toast((err && err.message) || 'Simulation failed.', 'err');
+    }).then(function () { if (btn) { btn.disabled = false; btn.textContent = 'Run simulated agent session'; } });
+  }
+
   function acceptBid(postId, price, agent) {
     if (!(Number(price) > 0)) return;
     S.api('/board/posts/' + encodeURIComponent(postId) + '/close', {
@@ -203,10 +218,12 @@
           '<input class="input" id="dealSettle" placeholder="Settle URL (optional)">' +
           '<button class="btn btn-gold btn-sm" id="dealRecord" type="button">Record deal · 0.5%</button>' +
         '</div>' +
-        '<div class="deal-note">Recording a deal only meters the 0.5% platform fee. It does not charge, hold, or settle funds.</div>';
+        '<div class="deal-note">Recording a deal only meters the 0.5% platform fee. It does not charge, hold, or settle funds.</div>' +
+        '<div class="thread-actions"><button class="btn btn-primary btn-sm" id="simulateSession" type="button">Run simulated agent session</button><span class="tiny muted">Autonomous bid/counter-bid demo via API</span></div>';
       Array.prototype.forEach.call($('threadComments').querySelectorAll('[data-accept-bid]'), function (btn) {
         btn.addEventListener('click', function () { acceptBid(post.id, btn.getAttribute('data-price'), btn.getAttribute('data-agent')); });
       });
+      if ($('simulateSession')) $('simulateSession').addEventListener('click', function () { simulateSession(post.id); });
       $('msgSend').addEventListener('click', function () { addMessage(post.id); });
       $('dealRecord').addEventListener('click', function () { recordDeal(post.id); });
     }
