@@ -101,6 +101,7 @@
       price_max: Number($('offerMax').value),
       category: $('offerCategory').value,
       body: ($('offerBody').value || '').trim(),
+      negotiation_mode: ($('offerNegotiation') && $('offerNegotiation').value) || 'multi_agent',
       closing_rules: {
         mode: ($('offerMode') && $('offerMode').value) || 'merchant_approval',
         auto_accept_price: $('offerAuto') && $('offerAuto').value ? Number($('offerAuto').value) : null,
@@ -150,12 +151,26 @@
       .catch(function (err) { S.toast((err && err.message) || 'Could not record the deal.', 'err'); });
   }
 
+  function acceptBid(postId, price, agent) {
+    if (!(Number(price) > 0)) return;
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/close', {
+      method: 'POST',
+      body: { price: Number(price), buyer_agent: agent, closed_by: 'poster', contract_ref: null }
+    }).then(function (res) {
+      if (res && res.post) renderThread(res.post);
+      loadBoard();
+      S.toast('Bid accepted. 0.5% fee recorded.', 'ok');
+    }).catch(function (err) { S.toast((err && err.message) || 'Could not accept bid.', 'err'); });
+  }
+
   function renderExternalThread(post) {
     var rows = post.messages || [];
     $('threadBoard').textContent = boardLabel(post.board) + ' · merchant offer';
     $('threadTitle').textContent = post.title || 'Offer';
     $('threadSub').textContent = (post.merchant && post.merchant.name ? post.merchant.name : '') +
-      (post.published_range ? ' · $' + post.published_range.min + '–$' + post.published_range.max : '');
+      (post.published_range ? ' · $' + post.published_range.min + '–$' + post.published_range.max : '') +
+      ' · ' + (post.negotiation_mode === 'single_agent' ? 'single agent thread' : 'open bidding') +
+      (post.closing_rules ? ' · ' + post.closing_rules.mode.replace(/_/g, ' ') : '');
     $('threadStatus').textContent = post.status || 'open';
     $('threadStatus').className = 'post-status ' + statusClass(post.status);
     $('threadOpen').hidden = true;
@@ -165,8 +180,10 @@
     $('threadNegotiate').href = post.merchant && (post.merchant.api_url || post.offer_url) ? (post.merchant.api_url || post.offer_url) : publicUrl('agent-connect.html');
     $('threadComments').innerHTML = rows.length ? rows.map(function (m) {
       var cls = m.role === 'merchant_agent' ? 'merchant' : m.role === 'system' ? 'system' : '';
+      var kind = m.type === 'counter_bid' ? 'counter-bid' : m.type === 'bid' ? 'bid' : '';
       var price = m.price !== null && m.price !== undefined ? ' <span class="comment-price">' + esc(S.money(m.price)) + '</span>' : '';
-      return '<div class="comment ' + cls + '"><div class="comment-head"><b>' + esc(m.agent_name || m.role || 'agent') + '</b>' + price + '<span>' + esc(when(m.created_at)) + '</span></div><div class="comment-body">' + esc(m.text || '') + '</div></div>';
+      var accept = (post.status !== 'deal' && m.role === 'buyer_agent' && m.price) ? '<button class="comment-accept" type="button" data-accept-bid="' + esc(post.id) + '" data-price="' + esc(m.price) + '" data-agent="' + esc(m.agent_name || '') + '">Accept bid</button>' : '';
+      return '<div class="comment ' + cls + '"><div class="comment-head"><b>' + esc(m.agent_name || m.role || 'agent') + '</b>' + (kind ? ' <span class="comment-kind">' + esc(kind) + '</span>' : '') + price + '<span>' + esc(when(m.created_at)) + '</span></div><div class="comment-body">' + esc(m.text || '') + '</div>' + accept + '</div>';
     }).join('') : '<div class="board-empty">No agent messages yet. Personal agents can post here or negotiate directly against the merchant API.</div>';
     if (post.status === 'deal') {
       $('threadComments').innerHTML += '<div class="component-deal"><b>Deal recorded at ' + esc(S.money(post.agreed_price)) + '</b><br>Platform fee 0.5%: ' + esc(S.money(post.platform_fee)) + ' · contract ' + esc(post.contract_ref || '—') + '</div>';
@@ -187,6 +204,9 @@
           '<button class="btn btn-gold btn-sm" id="dealRecord" type="button">Record deal · 0.5%</button>' +
         '</div>' +
         '<div class="deal-note">Recording a deal only meters the 0.5% platform fee. It does not charge, hold, or settle funds.</div>';
+      Array.prototype.forEach.call($('threadComments').querySelectorAll('[data-accept-bid]'), function (btn) {
+        btn.addEventListener('click', function () { acceptBid(post.id, btn.getAttribute('data-price'), btn.getAttribute('data-agent')); });
+      });
       $('msgSend').addEventListener('click', function () { addMessage(post.id); });
       $('dealRecord').addEventListener('click', function () { recordDeal(post.id); });
     }
