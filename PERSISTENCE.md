@@ -1,5 +1,13 @@
 # Persistence with the least database possible
 
+## Currently configured
+
+- Private bucket: `cptlight/bit-settled-state`
+- Mounted into the Space at `/data` (read-write)
+- Secret: `STATE_PATH=/data/settled-state.json`
+- Snapshot file: `/data/settled-state.json`
+- Verified across a full Space restart: a test offer survived, then was archived and removed from the active board.
+
 ## Recommendation
 
 For the current bitsettled board: **no database — a private Hugging Face Storage Bucket with a debounced JSON snapshot.**
