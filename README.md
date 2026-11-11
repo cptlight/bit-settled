@@ -26,6 +26,10 @@ npm start                # same
 npm test                 # e2e API tests (spawns its own server, port 4400)
 ```
 
+## Persistence
+
+**[PERSISTENCE.md](PERSISTENCE.md)** — the least-database option: a private Hugging Face Storage Bucket mounted at `/data`, with a debounced atomic JSON snapshot. No DB required for one replica.
+
 ## Pages
 
 | URL | What it shows |

@@ -29,6 +29,7 @@ const live = require('./lib/live');
 const mcpHttp = require('./lib/mcp-http');
 const board = require('./lib/board');
 const agentBuy = require('./lib/agent-buy');
+const persist = require('./lib/persist');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -1336,7 +1337,12 @@ function serveStatic(req, res, pathname) {
 }
 
 // ----------------------------------------------------------------- router --
+const persisted = persist.load();
+
 const server = http.createServer(async (req, res) => {
+  res.on('finish', () => {
+    if ((req.url || '').startsWith('/api/') && res.statusCode < 400) persist.schedule();
+  });
   let parsed;
   try {
     parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -1606,6 +1612,7 @@ server.listen(PORT, HOST, () => {
     console.log('[settled] PayPal adapter in SIM mode (set PAYPAL_LIVE=1 + credentials for live)');
   }
   console.log(`[settled] inventory scheduler every ${connectors.CONNECTOR_TICK_MS}ms`);
+  if (persist.enabled()) console.log(`[settled] state persistence: ${persist.file} (${persisted.loaded ? 'loaded' : 'new'})`);
 });
 
 module.exports = { server };
