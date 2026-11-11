@@ -6,8 +6,8 @@
 <title>Post an item — bitsettled.com</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="apple-theme.css">
-<link rel="stylesheet" href="apple-fluid.css?v=20261111-rail1">
-<link rel="stylesheet" href="search.css">
+<link rel="stylesheet" href="apple-fluid.css?v=20261111-buttons2">
+<link rel="stylesheet" href="search.css?v=20261111-buttons2">
 <link rel="stylesheet" href="legal.css">
 <style>
   .post-wrap{max-width:900px;margin:0 auto;padding:26px 0 70px}
@@ -19,7 +19,7 @@
   .post-card label{display:block;font-size:10px;color:#6e6e73;margin:10px 0 4px}
   .post-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
   .post-note{font-size:10.5px;line-height:1.6;color:#6e6e73;margin-top:10px}
-  .post-submit{background:#1d1d1f;color:#fff;border:1px solid #1d1d1f;border-radius:980px;padding:10px 18px;font:600 13px var(--apple-sans);cursor:pointer}
+  .post-submit{background:#0071e3;color:#fff;border:1px solid #0071e3;border-radius:980px;padding:10px 18px;font:600 13px var(--apple-sans);cursor:pointer}
   @media(max-width:650px){.post-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -76,7 +76,7 @@
       <div><label>Auto-accept price (optional)</label><input class="input" id="postAuto" type="number" min="1" placeholder="237"></div>
     </div>
     <div class="post-grid full"><div><label>Description / terms</label><textarea class="input" id="postBody" rows="4" placeholder="3-day delivery · 30-day returns · 12-month warranty. No private floor."></textarea></div></div>
-    <div class="post-actions"><button class="post-submit" id="postSubmit" type="button">Post item</button><a class="btn btn-ghost" href="index.html">Back to board</a></div>
+    <div class="post-actions"><button class="post-submit btn btn-primary" id="postSubmit" type="button">Post item</button><a class="btn btn-ghost" href="index.html">Back to board</a></div>
     <div class="post-note">The item opens in this window after posting. No catalog or funds are hosted.</div>
   </section>
 </main>
