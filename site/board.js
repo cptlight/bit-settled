@@ -338,12 +338,6 @@
   if ($('threadClose')) $('threadClose').addEventListener('click', function () { $('threadPanel').hidden = true; state.selected = null; });
   if ($('boardInstruction')) $('boardInstruction').addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') startThread(); });
 
-  if ($('navSearch')) $('navSearch').value = initialQ;
-  if ($('navSearchForm')) $('navSearchForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var q = ($('navSearch').value || '').trim();
-    location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
-  });
   loadBoard(); loadCounts();
   state.timer = setInterval(function () { loadBoard(); loadCounts(); }, 2000);
   window.addEventListener('beforeunload', function () { clearInterval(state.timer); });

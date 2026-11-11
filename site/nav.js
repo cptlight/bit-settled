@@ -28,15 +28,3 @@
     // keep the static fallback links
   });
 })();
-
-(function () {
-  var form = document.getElementById('navSearchForm');
-  var input = document.getElementById('navSearch');
-  var q = new URLSearchParams(location.search).get('q') || '';
-  if (input && q) input.value = q;
-  if (form) form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var value = (input && input.value || '').trim();
-    location.href = 'index.html' + (value ? '?q=' + encodeURIComponent(value) : '');
-  });
-})();

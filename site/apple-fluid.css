@@ -1,0 +1,118 @@
+/* =========================================================
+   Acme-fluid Apple design layer for bitsettled.com
+   SF-style typography, fluid spacing, one blue action,
+   quiet surfaces and consistent pill controls.
+   ========================================================= */
+:root{
+  --apple-ink:#1d1d1f;
+  --apple-muted:#6e6e73;
+  --apple-hair:#d2d2d7;
+  --apple-soft:#f5f5f7;
+  --apple-blue:#0071e3;
+  --apple-link:#0066cc;
+  --apple-danger:#ff3b30;
+  --apple-sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+html{color-scheme:light;-webkit-text-size-adjust:100%}
+body.apple-theme{
+  font-family:var(--apple-sans)!important;
+  font-size:clamp(15px,.55vw + 13.2px,17px)!important;
+  line-height:1.47059!important;
+  letter-spacing:-.005em!important;
+  color:var(--apple-ink)!important;
+  background:#fff!important;
+  -webkit-font-smoothing:antialiased!important;
+  text-rendering:optimizeLegibility;
+}
+body.apple-theme .bg{display:none!important}
+body.apple-theme .shell,
+body.apple-theme .legal-wrap,
+body.apple-theme .demo-wrap,
+body.apple-theme .fee-wrap,
+body.apple-theme .reg-wrap,
+body.apple-theme .esc-wrap{
+  width:100%!important;
+  max-width:min(1180px,calc(100% - 2 * clamp(16px,4vw,48px)))!important;
+  padding-left:0!important;padding-right:0!important;
+  margin-left:auto!important;margin-right:auto!important;
+}
+body.apple-theme h1,body.apple-theme h2,body.apple-theme h3,body.apple-theme h4{
+  font-family:var(--apple-sans)!important;
+  color:var(--apple-ink)!important;
+  font-weight:600!important;
+  letter-spacing:-.025em!important;
+  text-wrap:balance;
+}
+body.apple-theme h1{font-size:clamp(32px,4.6vw,56px)!important;line-height:1.045!important}
+body.apple-theme h2{font-size:clamp(22px,2.4vw,32px)!important;line-height:1.1!important}
+body.apple-theme h3{font-size:clamp(18px,1.5vw,22px)!important;line-height:1.15!important}
+body.apple-theme p,body.apple-theme li{font-family:var(--apple-sans)!important;color:var(--apple-muted)}
+body.apple-theme a{color:var(--apple-link)!important}
+body.apple-theme .eyebrow,body.apple-theme .hub-kicker,body.apple-theme .connect-kicker,
+body.apple-theme .das-kicker,body.apple-theme .mkt-kicker{
+  font-family:var(--apple-sans)!important;
+  font-weight:600!important;
+  font-size:clamp(10px,.7vw,12px)!important;
+  letter-spacing:.02em!important;
+  text-transform:none!important;
+  color:var(--apple-blue)!important;
+}
+body.apple-theme .panel,body.apple-theme .card,body.apple-theme .surface,
+body.apple-theme .post,body.apple-theme .cat-item,body.apple-theme .legal-card,
+body.apple-theme .reg-form,body.apple-theme .inventory,body.apple-theme .demo-side .panel{
+  border-radius:18px!important;
+  border:1px solid var(--apple-hair)!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+body.apple-theme .panel-title{font-family:var(--apple-sans)!important;font-weight:600!important;letter-spacing:-.015em!important;color:var(--apple-ink)!important}
+body.apple-theme .btn,body.apple-theme button.btn,body.apple-theme .auth-btn{
+  font-family:var(--apple-sans)!important;
+  font-size:clamp(12px,.8vw,14px)!important;
+  font-weight:500!important;
+  letter-spacing:-.01em!important;
+  border-radius:980px!important;
+  min-height:38px!important;
+  padding:8px 18px!important;
+  transition:background .2s ease,color .2s ease,transform .2s ease!important;
+}
+body.apple-theme .btn-primary,body.apple-theme button.btn-primary{
+  background:var(--apple-blue)!important;border:1px solid var(--apple-blue)!important;color:#fff!important;
+}
+body.apple-theme .auth-btn{
+  background:var(--apple-ink)!important;border:1px solid var(--apple-ink)!important;color:#fff!important;
+}
+body.apple-theme .auth-btn.ghost,body.apple-theme .btn-ghost{
+  background:var(--apple-soft)!important;border:1px solid var(--apple-soft)!important;color:var(--apple-ink)!important;
+}
+body.apple-theme .btn-gold{background:var(--apple-blue)!important;border-color:var(--apple-blue)!important;color:#fff!important}
+body.apple-theme .btn:active,body.apple-theme .auth-btn:active{transform:scale(.98)}
+body.apple-theme input,body.apple-theme textarea,body.apple-theme select,body.apple-theme .input{
+  font-family:var(--apple-sans)!important;
+  font-size:clamp(13px,.9vw,15px)!important;
+  color:var(--apple-ink)!important;
+  background:#fff!important;
+  border:1px solid var(--apple-hair)!important;
+  border-radius:12px!important;
+  min-height:44px!important;
+  padding:10px 12px!important;
+}
+body.apple-theme textarea{min-height:88px!important;line-height:1.45!important}
+body.apple-theme input:focus,body.apple-theme textarea:focus,body.apple-theme select:focus,body.apple-theme .input:focus{
+  outline:none!important;border-color:var(--apple-blue)!important;box-shadow:0 0 0 3px rgba(0,113,227,.14)!important;
+}
+body.apple-theme .nav a,body.apple-theme .nav-account,body.apple-theme .nav-auth,body.apple-theme .nav-board summary{
+  font-family:var(--apple-sans)!important;
+}
+body.apple-theme .topnav-in{max-width:min(1180px,calc(100% - 2 * clamp(12px,3vw,32px)))!important}
+body.apple-theme .post-title,body.apple-theme .item-title{font-weight:600!important;letter-spacing:-.025em!important}
+body.apple-theme .post-body,body.apple-theme .comment-text{font-family:var(--apple-sans)!important;color:var(--apple-muted)!important}
+body.apple-theme .footer,body.apple-theme .legal-footer{font-family:var(--apple-sans)!important;font-size:12px!important}
+body.apple-theme .tiny,body.apple-theme .muted,body.apple-theme .small{font-family:var(--apple-sans)!important}
+body.apple-theme code,body.apple-theme pre,body.apple-theme .mono,body.apple-theme .credential,body.apple-theme .demo-log{
+  font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace!important;
+}
+@media(max-width:760px){
+  body.apple-theme .shell,body.apple-theme .legal-wrap,body.apple-theme .demo-wrap,body.apple-theme .fee-wrap,body.apple-theme .reg-wrap,body.apple-theme .esc-wrap{max-width:calc(100% - 32px)!important}
+  body.apple-theme .btn,body.apple-theme .auth-btn{min-height:42px}
+}
