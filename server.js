@@ -875,6 +875,13 @@ async function handleBoardSimulate(req, res, id) {
   sendJson(res, 200, out);
 }
 
+async function handleBoardCommentVote(req, res, id, messageId) {
+  const body = await readJson(req);
+  const out = board.voteComment(id, messageId, body.direction);
+  if (!out) return fail(res, 404, 'COMMENT_NOT_FOUND', `no comment '${messageId}' on '${id}'`);
+  sendJson(res, 200, out);
+}
+
 async function handleBoardFeeOrder(req, res, id) {
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
@@ -1425,6 +1432,7 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 3 && seg[2] === 'wants' && method === 'POST') return handleBoardWant(req, res);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'close' && method === 'POST') return handleBoardClose(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'simulate' && method === 'POST') return handleBoardSimulate(req, res, seg[3]);
+    if (seg.length === 7 && seg[2] === 'posts' && seg[4] === 'comments' && seg[6] === 'vote' && method === 'POST') return handleBoardCommentVote(req, res, seg[3], seg[5]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-order' && method === 'POST') return handleBoardFeeOrder(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-capture' && method === 'POST') return handleBoardFeeCapture(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'messages' && method === 'POST') return handleBoardMessage(req, res, seg[3]);

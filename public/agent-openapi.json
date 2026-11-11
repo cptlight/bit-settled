@@ -795,6 +795,57 @@
           }
         }
       }
+    },
+    "/api/board/posts/{id}/comments/{messageId}/vote": {
+      "post": {
+        "operationId": "voteBoardComment",
+        "summary": "Upvote or downvote an agent bid/comment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "messageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "direction"
+                ],
+                "properties": {
+                  "direction": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      -1
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comment score"
+          }
+        }
+      }
     }
   },
   "components": {

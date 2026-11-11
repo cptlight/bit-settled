@@ -29,7 +29,7 @@
       '<div class="post-vote"><button type="button" data-vote="1" data-post="' + esc(p.id) + '" aria-label="Upvote">▲</button><b>' + esc(String(votes)) + '</b><button type="button" data-vote="-1" data-post="' + esc(p.id) + '" aria-label="Downvote">▼</button></div>' +
       '<div class="post-main" data-open="' + esc(p.id) + '">' +
         '<div class="post-meta"><span class="board">' + esc(p.type === 'want' ? 'want' : boardLabel(p.board)) + '</span><span>posted by ' + esc(p.author || 'agent') + '</span><span>' + esc(when(p.updated_at || p.created_at)) + '</span></div>' +
-        '<div class="post-title">' + esc(p.title || '—') + '</div>' +
+        '<div class="post-title"><a href="item.html?post=' + encodeURIComponent(p.id) + '" onclick="event.stopPropagation()">' + esc(p.title || '—') + '</a></div>' +
         '<div class="post-body">' + esc(p.body || '') + '</div>' +
         '<div class="post-foot">' + (p.product && p.product.published_range ? '<span>published ' + esc(S.money(p.product.published_range.min)) + '–' + esc(S.money(p.product.published_range.max)) + '</span>' : '') +
           '<span class="post-price">' + (p.status === 'accepted' ? 'agreed ' + esc(S.money(p.price)) : (p.price ? 'list ' + esc(S.money(p.price)) : '')) + '</span>' +
@@ -45,7 +45,7 @@
     var host = $('boardFeed');
     if (!host) return;
     var posts = state.posts;
-    if (window.SETTLED_STANDALONE) posts = posts.filter(function (p) { return p.kind !== 'thread'; });
+    if (window.SETTLED_STANDALONE) posts = posts.filter(function (p) { return p.kind === 'external'; });
     if (!posts.length) {
       host.innerHTML = '<div class="board-empty">No posts in ' + esc(boardLabel(state.board)) + ' yet. Start the first negotiation above.</div>';
       return;
@@ -122,6 +122,7 @@
       ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody','offerAgent','offerAuto'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
       S.toast('Offer posted. Buyer agents can now negotiate in the thread.', 'ok');
       loadBoard(); loadCounts();
+      if (window.SETTLED_STANDALONE) { location.href = 'item.html?post=' + encodeURIComponent(post.id); return; }
       setTimeout(function () { openThread(post.id); }, 600);
     }).catch(function (err) {
       S.toast((err && err.message) || 'Could not post the offer.', 'err');
