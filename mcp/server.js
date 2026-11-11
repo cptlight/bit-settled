@@ -127,6 +127,30 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'network_reputation',
+    description: 'Experimental: aggregate Ed25519-signed settlement receipts for an agent from this node and reachable direct peers, with per-node verified/unverified receipts and counts.',
+    inputSchema: {
+      type: 'object',
+      properties: { agent: { type: 'string', description: 'Agent or merchant display name to look up' } },
+      required: ['agent'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'network_handoff',
+    description: 'Experimental: create or read a signed cross-node handoff envelope (a deep link only — no cross-node settlement). Pass handoff_id to read; pass post_id (+ optional target_url, api_key) to create.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        handoff_id: { type: 'string', description: 'Read an existing handoff envelope by id' },
+        post_id: { type: 'string', description: 'Local board post id to hand off' },
+        target_url: { type: 'string', description: 'Target node origin or manifest URL (defaults to the first reachable peer)' },
+        api_key: { type: 'string', description: 'Participant API key required to create a handoff' },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'negotiate_start',
     description: 'Open a negotiable contract with a merchant for a product, within the buyer mandate.',
     inputSchema: {
@@ -401,6 +425,17 @@ const RUNNERS = {
   },
   async network_boards() {
     return rest('/api/network/boards');
+  },
+  async network_reputation(args) {
+    return rest('/api/network/reputation' + qs({ agent: args.agent }));
+  },
+  async network_handoff(args) {
+    if (args.handoff_id) {
+      return rest('/api/network/handoff/' + encodeURIComponent(args.handoff_id));
+    }
+    const body = { post_id: args.post_id };
+    if (args.target_url) body.target_url = args.target_url;
+    return rest('/api/network/handoff', { method: 'POST', body, headers: authHeaders(args.api_key) });
   },
   async negotiate_start(args) {
     const body = {

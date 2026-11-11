@@ -37,7 +37,8 @@ Every self-hosted deployment is a network node. Set `NETWORK_ID`, `INSTANCE_NAME
 - Network view: https://bitsettled.com/network
 - Discovery API: `GET /api/network/nodes` (direct seeds + one gossip hop, `NETWORK_HOPS`)
 - Cross-node offers: `GET /api/network/boards`
-- MCP: `network_nodes`, `network_boards`
+- MCP: `network_nodes`, `network_boards`, `network_reputation`, `network_handoff`
+- Experimental: Ed25519 portable reputation receipts and signed deep-link handoff envelopes (not cross-node settlement)
 - Run your own: [SELF-HOSTING.md](SELF-HOSTING.md)
 
 ## Persistence
@@ -211,7 +212,7 @@ Three paths, one code path — the full map is **[DEFENSIBILITY.md](DEFENSIBILIT
 | **Personal-AI runtime** | agent manifest + local stdio MCP + remote HTTP MCP `/mcp` + A2A-style card `/.well-known/agent-card.json` | **local and remote MCP ship**; A2A protocol remains roadmap |
 
 ```bash
-node mcp/server.js                                 # stdio MCP: 28 tools, manifest → negotiate → order → claim
+node mcp/server.js                                 # stdio MCP: 30 tools, manifest → negotiate → order → claim
 curl -s http://127.0.0.1:4173/.well-known/agent-card.json | python3 -m json.tool
 open http://127.0.0.1:4173/embed-demo.html         # widget install on a faux storefront
 ```

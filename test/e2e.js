@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (28), tools/call index_manifest + network_nodes + network_boards, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (30), tools/call index_manifest + network_nodes + network_boards + network_reputation, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,8 +1912,8 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 28, `tools/list count (got: ${names.join(', ')})`);
-      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
+      eq(list.result.tools.length, 30, `tools/list count (got: ${names.join(', ')})`);
+      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'network_reputation', 'network_handoff', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }
       for (const t of list.result.tools) hasKeys(t, ['name', 'description', 'inputSchema'], 'tool descriptor');
@@ -1955,8 +1955,15 @@ async function main() {
         assert(Array.isArray(entry.posts), 'network_boards entry.posts must be an array');
       }
 
+      const repCall = await s.request({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'network_reputation', arguments: { agent: 'NovaBuyer' } } });
+      const repRes = repCall.result;
+      assert(isObj(repRes) && repRes.isError === false, `tools/call network_reputation failed: ${JSON.stringify(repCall).slice(0, 400)}`);
+      const reputation = JSON.parse(repRes.content[0].text);
+      eq(typeof reputation.count, 'number', 'network_reputation count');
+      assert(Array.isArray(reputation.nodes), 'network_reputation.nodes must be an array');
+
       assert(s.invalid.length === 0, `MCP stdout must be JSON-RPC lines only; non-JSON line(s): ${JSON.stringify(s.invalid)}`);
-      return `initialize ok; 28 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; invalid tool isError=true`;
+      return `initialize ok; 30 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; network_reputation count ${reputation.count}; invalid tool isError=true`;
     } finally {
       // Guarantee no stray stdio child: close stdin, SIGTERM, then SIGKILL if it lingers.
       try {
@@ -2637,6 +2644,126 @@ async function main() {
     eq(((await get('/api/index')).json.items || []).length, 5, 'final reset must restore 5 seed index items');
     const stripDetail = demoStrip ? (demoWired ? 'present+wired' : 'present, wiring missing') : 'absent (no owner in batch)';
     return `agent-setup markers ok; manual Add product removed; 5-step demo intact; demo strip ${stripDetail}`;
+  });
+
+  // =========================================================================
+  // v9 — experimental signed reputation receipts + cross-node handoff
+  // =========================================================================
+  await test('T88', 'v9 reputation receipts (Ed25519) verified locally + signed handoff envelope (deep link)', async () => {
+    await reset();
+
+    const reg = await post('/api/accounts/register', { role: 'merchant', display_name: 'Receipt Merchant', agent_name: 'ReceiptMerchantAgent' });
+    eq(reg.status, 201, 'register receipt merchant');
+    const apiKey = reg.json.api_key;
+
+    const offer = await http('POST', '/api/board/offers', {
+      headers: { 'x-agent-key': apiKey },
+      body: {
+        merchant_name: 'Receipt Merchant', title: 'Receipted desk lamp', body: 'settles with a signed receipt',
+        category: 'Lighting', price_min: 100, price_max: 120, merchant_api: 'https://receipt.example/api',
+      },
+    });
+    eq(offer.status, 201, 'create receipt offer');
+    const postId = offer.json.post.id;
+
+    const inst = await get('/api/instance');
+    eq(inst.status, 200, 'GET /api/instance');
+    assert(typeof inst.json.reputation_public_key === 'string' && /BEGIN PUBLIC KEY/.test(inst.json.reputation_public_key), 'instance.reputation_public_key must be an SPKI PEM');
+    assert((inst.json.capabilities || []).includes('reputation'), 'instance capabilities must include reputation');
+    assert((inst.json.capabilities || []).includes('handoff'), 'instance capabilities must include handoff');
+
+    await post(`/api/board/posts/${postId}/close`, { price: 105, buyer_agent: 'ReceiptBuyer' });
+    await post(`/api/board/posts/${postId}/escrow-order`, {});
+    await post(`/api/board/posts/${postId}/escrow-authorize`, { simulate: true });
+    const confirm = await post(`/api/board/posts/${postId}/escrow-confirm`, { simulate: true });
+    eq(confirm.status, 200, 'escrow-confirm');
+    eq(confirm.json.post.merchant_paid, true, 'merchant_paid must be true before receipts');
+    assert(Array.isArray(confirm.json.receipts) && confirm.json.receipts.length === 2, `expected 2 receipts, got ${JSON.stringify(confirm.json.receipts)}`);
+    for (const receipt of confirm.json.receipts) {
+      hasKeys(receipt, ['schema', 'id', 'issuer_network_id', 'issuer_public_key', 'subject_agent', 'role', 'post_id', 'outcome', 'issued_at', 'signature'], 'receipt');
+      eq(receipt.outcome, 'settled', 'receipt.outcome');
+      eq(receipt.post_id, postId, 'receipt.post_id');
+      assert(receipt.issuer_public_key === inst.json.reputation_public_key, 'receipt issuer key must match the instance manifest key');
+      assert(receipt.signature.length > 40, 'receipt.signature must be present');
+    }
+    const receiptRoles = confirm.json.receipts.map((receipt) => receipt.role).sort();
+    eq(receiptRoles.join(','), 'buyer_agent,merchant', 'receipt roles');
+
+    const rep = await get('/api/network/reputation?agent=ReceiptBuyer');
+    eq(rep.status, 200, 'GET /api/network/reputation');
+    hasKeys(rep.json, ['schema_version', 'network_id', 'agent', 'generated_at', 'count', 'verified_count', 'unverified_count', 'nodes'], 'reputation response');
+    eq(rep.json.agent, 'ReceiptBuyer', 'reputation agent');
+    eq(rep.json.count, 1, 'reputation count');
+    eq(rep.json.verified_count, 1, 'reputation verified_count');
+    eq(rep.json.unverified_count, 0, 'reputation unverified_count');
+    const selfEntry = (rep.json.nodes || []).find((entry) => entry.node && entry.node.self === true);
+    assert(selfEntry && selfEntry.receipts.length === 1, 'self reputation entry must carry the buyer receipt');
+    eq(selfEntry.receipts[0].role, 'buyer_agent', 'self receipt role');
+    eq(selfEntry.receipts[0].verified, true, 'self receipt must verify');
+    eq(selfEntry.verified_count, 1, 'self verified_count');
+
+    const repLower = await get('/api/network/reputation?agent=receiptbuyer');
+    eq(repLower.json.count, 1, 'reputation lookup is case-insensitive');
+    assertErrorShape(await get('/api/network/reputation'), 400, 'reputation without agent');
+
+    const again = await post(`/api/board/posts/${postId}/escrow-confirm`, { simulate: true });
+    eq(again.status, 200, 'second escrow-confirm');
+    eq(again.json.already_paid, true, 'second confirm reports already_paid');
+    eq(again.json.receipts.length, 2, 'receipts are idempotent');
+
+    // Tiny target node so handoff target validation is exercised without seeds.
+    const httpMod = require('node:http');
+    let targetUrl = '';
+    const target = httpMod.createServer((req, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ schema_version: 'bitsettled-instance/1', network_id: 'peer-target', name: 'Handoff Target', public_url: targetUrl, mode: 'sim' }));
+    });
+    await new Promise((resolve, reject) => {
+      target.once('error', reject);
+      target.listen(0, '127.0.0.1', () => {
+        targetUrl = `http://127.0.0.1:${target.address().port}`;
+        resolve();
+      });
+    });
+    let created = null;
+    try {
+      assertErrorShape(await http('POST', '/api/network/handoff', { body: { post_id: postId } }), 401, 'handoff without api key');
+
+      const handoff = await http('POST', '/api/network/handoff', {
+        headers: { 'x-agent-key': apiKey },
+        body: { post_id: postId, target_url: targetUrl },
+      });
+      eq(handoff.status, 201, 'create handoff');
+      hasKeys(handoff.json, ['handoff', 'verified', 'note'], 'handoff response');
+      created = handoff.json.handoff;
+      hasKeys(created, ['schema', 'handoff_id', 'source_network_id', 'source_public_url', 'source_public_key', 'target', 'post_id', 'item_url', 'created_at', 'signature'], 'handoff envelope');
+      eq(created.schema, 'bitsettled-handoff/1', 'handoff schema');
+      eq(created.target.network_id, 'peer-target', 'handoff target network id');
+      eq(created.post_id, postId, 'handoff post_id');
+      eq(created.source_public_key, inst.json.reputation_public_key, 'handoff source key matches manifest');
+      assert(/^(?:https?:\/\/[^/]+)?\/item\.html\?post=/.test(created.item_url), `handoff item_url must be an item deep link, got ${created.item_url}`);
+      assert(created.item_url.startsWith(targetUrl), `handoff item_url must target the remote node, got ${created.item_url}`);
+      assert(isIso(created.created_at), 'handoff created_at must be ISO');
+      eq(handoff.json.verified, true, 'handoff signature verifies');
+      assert(handoff.json.note && /deep-link/i.test(handoff.json.note), 'handoff response must say it is a deep link, not settlement');
+
+      const read = await get(`/api/network/handoff/${created.handoff_id}`);
+      eq(read.status, 200, 'GET /api/network/handoff/:id');
+      eq(read.json.verified, true, 'stored handoff verifies');
+      eq(read.json.handoff.signature, created.signature, 'handoff signature stable');
+
+      assertErrorShape(await get('/api/network/handoff/hoff_missing'), 404, 'unknown handoff');
+      const remote = await http('POST', '/api/network/handoff', { headers: { 'x-agent-key': apiKey }, body: { post_id: 'ext_missing', target_url: targetUrl } });
+      eq(remote.status, 201, 'handoff remote-only post');
+      assert(remote.json.handoff.item_url.startsWith(targetUrl), 'remote handoff points at target item URL');
+      assertErrorShape(await http('POST', '/api/network/handoff', { headers: { 'x-agent-key': apiKey }, body: { post_id: postId, target_url: 'ftp://nope' } }), 400, 'handoff invalid target');
+    } finally {
+      if (typeof target.closeAllConnections === 'function') target.closeAllConnections();
+      await new Promise((resolve) => target.close(() => resolve()));
+    }
+
+    await reset();
+    return `2 Ed25519 receipts verified locally (${selfEntry.receipts[0].id}); handoff ${created.handoff_id} signed+verified; 401/404/400 paths ok`;
   });
 }
 

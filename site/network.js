@@ -308,10 +308,30 @@
     return esc((err && err.message) || 'The network API did not respond.');
   }
 
-  function request(path) {
-    if (S.api) return S.api(path);
+  function participantKey() {
+    try {
+      var saved = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null');
+      if (saved && typeof saved.api_key === 'string' && saved.api_key) return saved.api_key;
+    } catch (e) {}
+    return '';
+  }
+
+  function request(path, options) {
+    options = options || {};
+    if (S.api) return S.api(path, options);
     var url = stripSlash(base) + path;
-    return fetch(url, { headers: { accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) {
+    var init = {
+      method: (options.method || 'GET').toUpperCase(),
+      headers: { accept: 'application/json' },
+      credentials: 'same-origin'
+    };
+    var key = participantKey();
+    if (key) init.headers['x-agent-key'] = key;
+    if (options.body !== undefined) {
+      init.headers['content-type'] = 'application/json';
+      init.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+    }
+    return fetch(url, init).then(function (r) {
       return r.text().then(function (t) {
         var data = null;
         try { data = t ? JSON.parse(t) : null; } catch (e) {}
@@ -468,10 +488,22 @@
     meta.push('<span class="net-offer-status ' + esc(offer.statusKey) + '">' + esc(offer.statusLabel) + '</span>');
     var main = '<span class="net-offer-main"><span class="net-offer-title">' + esc(offer.title) + '</span>' +
       '<span class="net-offer-meta">' + meta.join('') + '</span></span>';
-    if (!href) return '<div class="net-offer">' + main + '</div>';
-    var remote = isRemoteUrl(href);
-    return '<a class="net-offer" href="' + esc(href) + '"' + (remote ? ' target="_blank" rel="noopener"' : '') + '>' +
-      main + '<span class="net-offer-arrow" aria-hidden="true">↗</span></a>';
+    var link;
+    if (!href) {
+      link = '<div class="net-offer">' + main + '</div>';
+    } else {
+      var remote = isRemoteUrl(href);
+      link = '<a class="net-offer" href="' + esc(href) + '"' + (remote ? ' target="_blank" rel="noopener"' : '') + '>' +
+        main + '<span class="net-offer-arrow" aria-hidden="true">↗</span></a>';
+    }
+    var handoff = '';
+    if (!node.self && node.publicUrl) {
+      handoff = '<button class="net-offer-handoff" type="button" data-handoff-post="' + esc(offer.id) +
+        '" data-handoff-target="' + esc(node.publicUrl) + '" data-handoff-node="' + esc(node.name) +
+        (href ? '" data-handoff-item="' + esc(href) : '') +
+        '" aria-label="Hand off ' + esc(offer.title) + ' to ' + esc(node.name) + '">Hand off ↗</button>';
+    }
+    return '<div class="net-offer-row">' + link + handoff + '</div>';
   }
   function boardEntryHtml(entry) {
     var node = entry.node;
@@ -561,11 +593,225 @@
     });
   }
 
+  /* ---------- portable reputation: GET /api/network/reputation?agent=NAME ---------- */
+  var repSeq = 0;
+  var REP_ROLES = { merchant: 'Merchant', buyer_agent: 'Buyer agent' };
+
+  function repDate(iso) {
+    if (S.dateFmt) {
+      var out = S.dateFmt(iso);
+      if (out && out !== '—') return out;
+    }
+    return text(iso);
+  }
+  function buildReputationModel(res) {
+    res = res && typeof res === 'object' ? res : {};
+    var nodes = Array.isArray(res.nodes) ? res.nodes : [];
+    var total = typeof res.count === 'number' ? res.count : nodes.reduce(function (n, entry) {
+      return n + (Array.isArray(entry && entry.receipts) ? entry.receipts.length : 0);
+    }, 0);
+    var verified = typeof res.verified_count === 'number' ? res.verified_count : nodes.reduce(function (n, entry) {
+      return n + (Array.isArray(entry && entry.receipts) ? entry.receipts.filter(function (r) { return r && r.verified === true; }).length : 0);
+    }, 0);
+    var unverified = typeof res.unverified_count === 'number' ? res.unverified_count : Math.max(0, total - verified);
+    return { agent: text(res.agent), nodes: nodes, count: total, verifiedCount: verified, unverifiedCount: unverified };
+  }
+  function repReceipt(receipt) {
+    var verified = receipt.verified === true;
+    var badge = verified
+      ? '<span class="net-rep-badge ok">Verified</span>'
+      : '<span class="net-rep-badge bad">Unverified</span>';
+    var role = REP_ROLES[text(receipt.role)] || text(receipt.role) || 'Receipt';
+    var meta = [];
+    if (receipt.issuer_network_id) meta.push('Issuer <b>' + esc(receipt.issuer_network_id) + '</b>');
+    if (receipt.post_id) meta.push('Post <code>' + esc(receipt.post_id) + '</code>');
+    if (receipt.issued_at) meta.push(esc(repDate(receipt.issued_at)));
+    if (!verified && receipt.reason) meta.push('<span class="net-rep-reason">' + esc(receipt.reason) + '</span>');
+    return '<div class="net-rep-receipt">' +
+      '<div class="net-rep-receipt-top">' + badge +
+        '<span class="net-rep-subject">' + esc(text(receipt.subject_agent) || '(unnamed agent)') + '</span>' +
+        '<span class="net-rep-role">' + esc(role) + '</span>' +
+        '<span class="net-rep-outcome">' + esc(text(receipt.outcome) || 'settled') + '</span>' +
+      '</div>' +
+      '<div class="net-rep-receipt-meta">' + meta.join(' · ') + '</div>' +
+    '</div>';
+  }
+  function repNodeEntry(entry) {
+    entry = entry && typeof entry === 'object' ? entry : {};
+    var node = entry.node && typeof entry.node === 'object' ? entry.node : {};
+    var receipts = Array.isArray(entry.receipts) ? entry.receipts : [];
+    var count = typeof entry.count === 'number' ? entry.count : receipts.length;
+    var verified = typeof entry.verified_count === 'number' ? entry.verified_count : receipts.filter(function (r) { return r && r.verified === true; }).length;
+    var unverified = typeof entry.unverified_count === 'number' ? entry.unverified_count : Math.max(0, count - verified);
+    var name = text(node.name) || text(node.network_id) || 'Unnamed node';
+    var meta = node.network_id ? 'Network <b>' + esc(node.network_id) + '</b>' : 'Network ID unknown';
+    if (node.public_url) {
+      meta += ' · <a href="' + esc(node.public_url) + '" target="_blank" rel="noopener">' +
+        esc(stripSlash(node.public_url).replace(/^https?:\/\//i, '')) + '</a>';
+    }
+    var head = '<div class="net-rep-node-head">' +
+      '<div class="net-rep-node-id">' +
+        '<h3 class="net-rep-node-name">' + esc(name) + (node.self === true ? ' <span class="net-badge">This node</span>' : '') + '</h3>' +
+        '<div class="net-rep-node-meta">' + meta + '</div>' +
+      '</div>' +
+      '<div class="net-rep-counts">' +
+        '<span class="net-rep-count">' + count + ' receipt' + (count === 1 ? '' : 's') + '</span>' +
+        '<span class="net-rep-count ok">' + verified + ' verified</span>' +
+        (unverified ? '<span class="net-rep-count bad">' + unverified + ' unverified</span>' : '') +
+        (entry.reachable === false ? '<span class="net-rep-count bad">Unreachable</span>' : '') +
+      '</div>' +
+    '</div>';
+    var body;
+    if (entry.reachable === false) {
+      body = '<div class="net-rep-no-receipts">Peer could not be reached' + (entry.error ? ': ' + esc(entry.error) : '.') + '</div>';
+    } else if (!receipts.length) {
+      body = '<div class="net-rep-no-receipts">No receipts for this agent on this node.</div>';
+    } else {
+      body = '<div class="net-rep-receipts">' + receipts.map(repReceipt).join('') + '</div>';
+    }
+    return '<div class="net-rep-node">' + head + body + '</div>';
+  }
+  function renderReputation(state) {
+    var host = $('netRepResults');
+    var count = $('netRepCount');
+    if (!host) return;
+    if (state.status === 'idle') {
+      host.innerHTML = '<div class="net-rep-empty">Enter an agent name to see portable receipts.</div>';
+      if (count) count.textContent = 'Look up an agent';
+      return;
+    }
+    if (state.status === 'loading') {
+      host.innerHTML = '<div class="net-rep-empty">Looking up receipts for ' + esc(state.agent) + '…</div>';
+      if (count) count.textContent = 'Searching…';
+      return;
+    }
+    if (state.status === 'disabled' || state.status === 'error') {
+      if (count) count.textContent = 'Unavailable';
+      var body = state.status === 'disabled'
+        ? '<b>Feature disabled.</b> Portable reputation is turned off on this node (experimental federation feature).'
+        : '<b>Couldn’t load receipts.</b> ' + esc(state.message || 'The reputation API did not respond.');
+      host.innerHTML = '<div class="net-rep-error"><div>' + body + '</div>' +
+        '<button class="btn btn-ghost btn-sm" id="netRepRetry" type="button">Retry</button></div>';
+      var retry = $('netRepRetry');
+      if (retry) retry.addEventListener('click', function () { loadReputation(state.agent, true); });
+      return;
+    }
+    var model = state.model;
+    if (!model.nodes.length) {
+      if (count) count.textContent = 'No nodes answered';
+      host.innerHTML = '<div class="net-rep-empty">No nodes answered the lookup for ' + esc(state.agent) + '.</div>';
+      return;
+    }
+    if (count) {
+      count.textContent = model.count + ' receipt' + (model.count === 1 ? '' : 's') +
+        ' · ' + model.verifiedCount + ' verified';
+    }
+    var summary = '<div class="net-rep-summary">' +
+      '<span class="net-rep-count">' + model.count + ' receipt' + (model.count === 1 ? '' : 's') + '</span>' +
+      '<span class="net-rep-count ok">' + model.verifiedCount + ' verified</span>' +
+      (model.unverifiedCount ? '<span class="net-rep-count bad">' + model.unverifiedCount + ' unverified</span>' : '') +
+      '<span>across ' + model.nodes.length + ' node' + (model.nodes.length === 1 ? '' : 's') + ' for ' + esc(model.agent || state.agent) + '</span>' +
+    '</div>';
+    host.innerHTML = summary + model.nodes.map(repNodeEntry).join('');
+  }
+  function loadReputation(agentValue, force) {
+    var agent = text(agentValue);
+    if (!agent) {
+      renderReputation({ status: 'idle' });
+      var input = $('netRepAgent');
+      if (input) input.focus();
+      return;
+    }
+    var seq = ++repSeq;
+    renderReputation({ status: 'loading', agent: agent });
+    var path = '/network/reputation?agent=' + encodeURIComponent(agent) + (force ? '&refresh=1' : '');
+    request(path).then(function (res) {
+      if (seq !== repSeq) return;
+      renderReputation({ status: 'ok', agent: agent, model: buildReputationModel(res) });
+    }).catch(function (err) {
+      if (seq !== repSeq) return;
+      if (err && err.status === 404) renderReputation({ status: 'disabled', agent: agent });
+      else renderReputation({ status: 'error', agent: agent, message: (err && err.message) || 'The reputation API did not respond.' });
+    });
+  }
+
+  /* ---------- signed cross-node handoff: POST /api/network/handoff ---------- */
+  var handoffTimer = null;
+  function showHandoffNote(html, ok) {
+    var note = $('netHandoffNote');
+    if (!note) return;
+    note.hidden = false;
+    note.className = 'net-handoff-note' + (ok ? ' ok' : '');
+    note.innerHTML = html;
+    if (handoffTimer) clearTimeout(handoffTimer);
+    handoffTimer = setTimeout(function () { note.hidden = true; note.innerHTML = ''; }, ok ? 4500 : 10000);
+  }
+  function doHandoff(btn) {
+    var postId = btn.getAttribute('data-handoff-post') || '';
+    var target = btn.getAttribute('data-handoff-target') || '';
+    var nodeName = btn.getAttribute('data-handoff-node') || 'that node';
+    var itemHref = safeUrl(btn.getAttribute('data-handoff-item') || '');
+    if (!postId || !target) return;
+    if (!participantKey()) {
+      showHandoffNote('<b>Join the Exchange to hand off a post.</b> A signed handoff needs a participant API key — <a href="register.html">register a participant</a> first.', false);
+      return;
+    }
+    var original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Signing…';
+    request('/network/handoff', { method: 'POST', body: { post_id: postId, target_url: target } }).then(function (res) {
+      var envelope = res && res.handoff ? res.handoff : null;
+      var itemUrl = safeUrl((envelope && envelope.item_url) || (res && res.item_url));
+      if (itemUrl) {
+        showHandoffNote('<b>Handoff signed.</b> Opening the item on ' + esc(nodeName) + '…', true);
+        window.open(itemUrl, '_blank', 'noopener');
+      } else {
+        showHandoffNote('<b>Handoff signed.</b> ' +
+          (envelope && envelope.handoff_id ? 'Envelope <code>' + esc(envelope.handoff_id) + '</code> created.' : 'Signed envelope created.'), true);
+      }
+      btn.textContent = 'Handed off ✓';
+      setTimeout(function () { btn.disabled = false; btn.textContent = original; }, 1800);
+    }).catch(function (err) {
+      var code = err && err.code;
+      var message;
+      if (code === 'REGISTRATION_REQUIRED' || (err && err.status === 401)) {
+        message = '<b>Join the Exchange to hand off a post.</b> <a href="register.html">Register a participant</a> and try again.';
+      } else if (code === 'POST_NOT_FOUND') {
+        message = '<b>This post isn’t hosted on this node.</b> Handoffs can only be signed by the node that hosts the post (<code>' + esc(postId) + '</code>).' +
+          (itemHref ? ' <a href="' + esc(itemHref) + '" target="_blank" rel="noopener">Open the remote offer ↗</a>' : '');
+      } else if (err && err.status === 404) {
+        message = '<b>Handoffs are disabled on this node.</b> The experimental federation feature is turned off here.';
+      } else {
+        message = '<b>Handoff failed.</b> ' + esc((err && err.message) || 'The node did not respond.');
+      }
+      showHandoffNote(message, false);
+      btn.disabled = false;
+      btn.textContent = original;
+    });
+  }
+
   /* ---------- wiring ---------- */
   if (refreshBtn) refreshBtn.addEventListener('click', function () { load(true); loadBoards(true); });
+  var repForm = $('netRepForm');
+  if (repForm) {
+    repForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      loadReputation($('netRepAgent') ? $('netRepAgent').value : '', false);
+    });
+  }
+  try {
+    var agentParam = new URLSearchParams(window.location.search).get('agent');
+    if (agentParam && $('netRepAgent')) {
+      $('netRepAgent').value = agentParam;
+      loadReputation(agentParam, false);
+    }
+  } catch (e) {}
   document.addEventListener('click', function (e) {
     var target = e.target;
-    var btn = target && target.closest ? target.closest('#netCopySeeds, #netEmptyCopy') : null;
+    if (!target || !target.closest) return;
+    var handoffBtn = target.closest('[data-handoff-post]');
+    if (handoffBtn) { e.preventDefault(); doHandoff(handoffBtn); return; }
+    var btn = target.closest('#netCopySeeds, #netEmptyCopy');
     if (!btn) return;
     var code = $('netSeedsCode');
     copy(code ? code.textContent : SEEDS_TEMPLATE);

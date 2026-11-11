@@ -32,6 +32,8 @@ const agentBuy = require('./lib/agent-buy');
 const persist = require('./lib/persist');
 const instance = require('./lib/instance');
 const network = require('./lib/network');
+const reputation = require('./lib/reputation');
+const handoff = require('./lib/handoff');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -698,6 +700,8 @@ function handleReset(req, res) {
   live.reset();
   board.reset();
   catalog.resetUpdated();
+  reputation.reset();
+  handoff.reset();
   seedLedgerEvents();
   sendJson(res, 200, { ok: true });
 }
@@ -960,15 +964,21 @@ async function handleBoardEscrowConfirm(req, res, id) {
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
-  if (post.merchant_paid) return sendJson(res, 200, { post, already_paid: true });
+  if (post.merchant_paid) {
+    // Idempotent backfill for deals captured before this experimental feature.
+    const receipts = reputation.enabled() ? reputation.issueSettlementReceipts(post) : [];
+    return sendJson(res, 200, { post, already_paid: true, receipts });
+  }
   const authorizationId = body.authorization_id || post.authorization_id;
   if (!authorizationId) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer has not authorized payment yet');
   const capture = body.simulate === true
     ? { id: 'SIM-CAP-' + randHex(8), status: 'COMPLETED', simulated: true }
     : await paypal.captureAuthorization(authorizationId);
   const updated = board.markEscrowCaptured(id, { authorization_id: authorizationId, delivery_confirmed_at: data.nowIso() });
+  // Experimental: issue signed receipts only after merchant_paid is true.
+  const receipts = reputation.enabled() ? reputation.issueSettlementReceipts(updated) : [];
   const feeRequest = board.requestFee(id);
-  sendJson(res, 200, { post: updated, capture, mode: paypal.mode(), fee_request: feeRequest });
+  sendJson(res, 200, { post: updated, capture, mode: paypal.mode(), fee_request: feeRequest, receipts });
 }
 
 async function handleBoardFeeOrder(req, res, id) {
@@ -1080,6 +1090,41 @@ async function handleNetworkNodes(req, res, query) {
 async function handleNetworkBoards(req, res, query) {
   const refresh = query.get('refresh') === '1' || query.get('refresh') === 'true';
   const out = await network.boards({ self: instance.info(paypal.mode()), refresh });
+  sendJson(res, 200, out);
+}
+
+/** Experimental: aggregate signed settlement receipts from self + direct peers. */
+async function handleNetworkReputation(req, res, query) {
+  const out = await reputation.aggregate({
+    self: instance.info(paypal.mode()),
+    agent: query.get('agent') || '',
+    localOnly: query.get('local') === '1',
+    refresh: query.get('refresh') === '1',
+  });
+  sendJson(res, 200, out);
+}
+
+/** Experimental: create a signed cross-node handoff envelope (deep link only). */
+async function handleNetworkHandoffCreate(req, res) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return undefined;
+  const body = await readJson(req);
+  const postId = typeof body.post_id === 'string' ? body.post_id.trim() : '';
+  if (!postId) return fail(res, 400, 'POST_REQUIRED', 'post_id is required');
+  const localPost = board.get(postId);
+  if (!localPost && !body.target_url) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${postId}'`);
+  const post = localPost || { id: postId };
+  const out = await handoff.create({
+    self: instance.info(paypal.mode()),
+    post,
+    target_url: body.target_url,
+  });
+  sendJson(res, 201, out);
+}
+
+function handleNetworkHandoffGet(req, res, id) {
+  const out = handoff.get(id);
+  if (!out) return fail(res, 404, 'HANDOFF_NOT_FOUND', `no handoff '${id}'`);
   sendJson(res, 200, out);
 }
 
@@ -1489,6 +1534,21 @@ async function routeApi(req, res, method, pathname, query) {
   // GET /api/network/boards — public posts from reachable direct peer nodes
   if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'boards') {
     return handleNetworkBoards(req, res, query);
+  }
+
+  // GET /api/network/reputation?agent=NAME — experimental signed receipts
+  if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'reputation' && reputation.enabled()) {
+    return handleNetworkReputation(req, res, query);
+  }
+
+  // POST /api/network/handoff — experimental signed cross-node deep link
+  if (method === 'POST' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'handoff' && handoff.enabled()) {
+    return handleNetworkHandoffCreate(req, res);
+  }
+
+  // GET /api/network/handoff/:id — read a stored handoff envelope
+  if (method === 'GET' && seg.length === 4 && seg[1] === 'network' && seg[2] === 'handoff' && handoff.enabled()) {
+    return handleNetworkHandoffGet(req, res, seg[3]);
   }
 
   // /api/merchants ...
