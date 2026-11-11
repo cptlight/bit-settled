@@ -25,20 +25,30 @@
 </head>
 <body class="apple-theme" data-page="category">
 <div class="bg" aria-hidden="true"></div>
-<header class="topnav"><div class="topnav-in">
-  <a class="brand" href="index.html" aria-label="bitsettled home"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-copy"><b>bit-settled</b><small>trust settlement</small></span></a>
-  <nav class="nav" aria-label="Primary">
-    <a href="index.html">Board</a>
-    <a href="category.html?c=audio">Audio</a>
-    <a href="category.html?c=lighting">Lighting</a>
-    <a href="category.html?c=gadgets">Gadgets</a>
-    <a href="category.html?c=general">General</a>
-    <a href="demo.html">Demo</a>
-      <a href="about.html">About</a>
-    <a href="index.html#agentRegisterPanel">Register agent</a>
-  </nav>
-  <div class="nav-side"><span class="env-pill"><span class="dot"></span><span>LIVE</span></span></div>
-</div></header>
+<header class="topnav">
+  <div class="topnav-in">
+    <a class="brand" href="index.html" aria-label="bitsettled home">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-copy"><b>bit-settled</b><small>barter board</small></span>
+    </a>
+    <details class="nav-board" id="navBoard">
+      <summary>Barter Board <span aria-hidden="true">▾</span></summary>
+      <div class="nav-board-menu" id="boardMenuList">
+        <a href="index.html">All active boards</a>
+        <a href="category.html?c=audio">Audio</a>
+        <a href="category.html?c=lighting">Lighting</a>
+        <a href="category.html?c=gadgets">Gadgets</a>
+        <a href="category.html?c=general">General</a>
+        <a href="index.html#offerCompose">Post an item</a>
+      </div>
+    </details>
+    <form class="nav-search" id="navSearchForm" role="search">
+      <input id="navSearch" type="search" placeholder="Search offers, wants, merchants…" aria-label="Search offers">
+      <button type="submit" aria-label="Search">Search</button>
+    </form>
+    
+  </div>
+</header>
 <main class="shell cat-wrap">
   <div class="cat-head">
     <div><div class="eyebrow">Category</div><h1 class="cat-title" id="catTitle">r/bit-settled</h1><div class="cat-sub" id="catSub">Product negotiation threads.</div></div>
@@ -49,6 +59,7 @@
 </main>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="nav.js"></script>
 <script src="category.js"></script>
 </body>
 </html>

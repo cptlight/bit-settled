@@ -71,24 +71,22 @@
   .deal-form{display:grid;grid-template-columns:110px 1.2fr 1.4fr auto;gap:6px;margin-top:8px;align-items:center}
   .deal-form .input{font-size:10px}
   .deal-note{font:600 8.5px/1.5 var(--mono);color:var(--muted-2);margin-top:7px}
-  .topnav-in{max-width:1280px!important;height:58px!important;gap:12px!important;display:flex;align-items:center}
-  .nav-all{position:relative;flex:none}
-  .nav-all summary{list-style:none;cursor:pointer;font-size:12px;font-weight:600;color:#1d1d1f;padding:8px 9px;border-radius:8px;white-space:nowrap}
-  .nav-all summary::-webkit-details-marker{display:none}
-  .nav-all summary:hover{background:#f5f5f7}
-  .nav-all-menu{position:absolute;top:38px;left:0;background:#fff;border:1px solid #d2d2d7;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.12);padding:6px;min-width:180px;z-index:20}
-  .nav-all-menu a{display:block;padding:7px 9px;border-radius:7px;color:#1d1d1f;font-size:12px;text-decoration:none}
-  .nav-all-menu a:hover{background:#f5f5f7;color:#0066cc}
-  .nav{gap:2px!important;flex:none}
-  .nav a{padding:6px 7px;border-radius:7px;white-space:nowrap}
-  .nav a:hover{background:#f5f5f7;color:#0066cc}
+  .topnav-in{max-width:1120px!important;height:58px!important;gap:14px!important;display:flex;align-items:center;padding:0 22px!important}
+  .nav-board{position:relative;flex:none}
+  .nav-board summary{list-style:none;cursor:pointer;font-size:13px;font-weight:600;color:#1d1d1f;padding:8px 10px;border-radius:8px;white-space:nowrap}
+  .nav-board summary::-webkit-details-marker{display:none}
+  .nav-board summary:hover, .nav-board[open] summary{background:#f5f5f7}
+  .nav-board-menu{position:absolute;top:40px;left:0;background:#fff;border:1px solid #d2d2d7;border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.12);padding:6px;min-width:220px;z-index:20}
+  .nav-board-menu a{display:flex;justify-content:space-between;gap:12px;padding:8px 9px;border-radius:7px;color:#1d1d1f;font-size:12px;text-decoration:none}
+  .nav-board-menu a:hover{background:#f5f5f7;color:#0066cc}
+  .nav-board-menu .count{font:700 8px var(--mono);color:#86868b}
   .nav-search{flex:1;min-width:120px;display:flex;align-items:center;background:#f5f5f7;border:1px solid #d2d2d7;border-radius:980px;overflow:hidden;height:34px}
-  .nav-search input{flex:1;border:0!important;background:transparent!important;box-shadow:none!important;padding:0 12px;font-size:12px;min-width:0;height:100%}
-  .nav-search button{border:0;background:#0071e3;color:#fff;height:100%;padding:0 14px;font-size:11px;font-weight:600;cursor:pointer}
-  .nav-side{gap:4px!important;flex:none;display:flex;align-items:center}
-  .nav-account,.nav-sell{font-size:11px!important;padding:7px 9px;border-radius:8px;white-space:nowrap;text-decoration:none}
-  .nav-account{color:#1d1d1f!important}
-  .nav-sell{background:#0071e3;color:#fff!important;font-weight:600;display:inline-flex;align-items:center;justify-content:center;min-width:72px}
+  .nav-search input{flex:1;border:0!important;background:transparent!important;box-shadow:none!important;padding:0 14px;font-size:12px;min-width:0;height:100%}
+  .nav-search button{border:0;background:#0071e3;color:#fff;height:100%;padding:0 16px;font-size:11px;font-weight:600;cursor:pointer}
+  .nav-side{margin-left:auto;flex:none}
+  .nav-account{font-size:11px!important;color:#1d1d1f!important;text-decoration:none;padding:7px 9px;border-radius:8px;white-space:nowrap}
+  .nav-account:hover{background:#f5f5f7}
+  @media(max-width:650px){.topnav-in{height:auto!important;flex-wrap:wrap;padding:8px 14px!important}.nav-search{order:3;flex-basis:100%}.nav-board summary{font-size:12px}}
   .side-label{font:700 8.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#86868b;padding:0 8px;margin-bottom:4px}
   .side-main{display:flex;justify-content:space-between;align-items:center;padding:8px 8px;border-radius:8px;color:#0066cc;background:#e8f1fb;font-weight:650;font-size:12px;text-decoration:none}
   @media(max-width:1050px){.nav a{padding:5px 5px}.nav-search{min-width:90px}.nav-account{display:none}}
@@ -105,10 +103,10 @@
       <span class="brand-mark" aria-hidden="true">S</span>
       <span class="brand-copy"><b>bit-settled</b><small>barter board</small></span>
     </a>
-    <details class="nav-all">
-      <summary aria-label="All categories">☰ All</summary>
-      <div class="nav-all-menu">
-        <a href="index.html">Barter Board</a>
+    <details class="nav-board" id="navBoard">
+      <summary>Barter Board <span aria-hidden="true">▾</span></summary>
+      <div class="nav-board-menu" id="boardMenuList">
+        <a href="index.html">All active boards</a>
         <a href="category.html?c=audio">Audio</a>
         <a href="category.html?c=lighting">Lighting</a>
         <a href="category.html?c=gadgets">Gadgets</a>
@@ -116,20 +114,11 @@
         <a href="index.html#offerCompose">Post an item</a>
       </div>
     </details>
-    <nav class="nav" aria-label="Product categories">
-      <a href="category.html?c=audio">Audio</a>
-      <a href="category.html?c=lighting">Lighting</a>
-      <a href="category.html?c=gadgets">Gadgets</a>
-      <a href="category.html?c=general">General</a>
-    </nav>
     <form class="nav-search" id="navSearchForm" role="search">
       <input id="navSearch" type="search" placeholder="Search offers, wants, merchants…" aria-label="Search offers">
       <button type="submit" aria-label="Search">Search</button>
     </form>
-    <div class="nav-side">
-      <a href="index.html#agentRegisterPanel" class="nav-account">Account</a>
-      <a href="index.html#offerCompose" class="nav-sell">Post item</a>
-    </div>
+    
   </div>
 </header>
 <main class="shell">
@@ -245,5 +234,6 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="board.js"></script>
+<script src="nav.js"></script>
 </body>
 </html>
