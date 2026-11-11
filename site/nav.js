@@ -50,7 +50,7 @@
     var posts = (res && res.posts) || [];
     var external = posts.filter(function (p) { return p.kind === 'external'; });
     if (!external.length) {
-      menu.innerHTML = '<a href="index.html#offerCompose">No active boards yet — post the first item</a>';
+      menu.innerHTML = '<a href="post.html">No active boards yet — post the first item</a>';
       return;
     }
     var counts = {};
@@ -64,7 +64,7 @@
       boards.map(function (b) {
         return '<a href="category.html?c=' + encodeURIComponent(b) + '">' + (names[b] || b) + ' <span class="count">' + counts[b] + '</span></a>';
       }).join('') +
-      '<a href="index.html#offerCompose">Post an item</a>';
+      '<a href="post.html">Post an item</a>';
   }).catch(function () {
     // keep the static fallback links
   });
