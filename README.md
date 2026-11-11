@@ -30,6 +30,13 @@ npm start                # same
 npm test                 # e2e API tests (spawns its own server, port 4400)
 ```
 
+## Moderation + hardening
+
+- `/moderation.html` admin console (admin key in sessionStorage only).
+- Report, queue, hide/restore, audit; hidden posts disappear from board writes/reads.
+- Optional scrypt passwords with 7-day sessions; API-key rotation.
+- 60/min write rate limit (`RATE_LIMIT_PER_MIN`), 64KB JSON cap, security headers.
+
 ## Distributed instances
 
 Every self-hosted deployment is a network node. Set `NETWORK_ID`, `INSTANCE_NAME` and `INSTANCE_TAGLINE`; the board reads `/api/instance` and applies the identity. Each node publishes a discovery manifest at `/.well-known/bitsettled.json` with its API, MCP and OpenAPI endpoints. There is no central server required for an instance to run.

@@ -46,6 +46,7 @@ The board hosts the thread and the deal record. It does not host the merchant’
 - **PayPal Orders v2 + JS SDK** with `intent=AUTHORIZE` and delayed capture.
 - **HMAC trust ledger and signed negotiation contracts** in the infrastructure layer.
 - **MCP remote server with 33 tools**; REST + OpenAPI.
+- **Production hardening:** optional scrypt passwords and revocable sessions, API-key rotation, per-IP/account rate limits, security headers, moderation report/queue/hide/restore with admin console.
 - **Cloudflare Pages** living board + **Hugging Face** infrastructure/reference API.
 - **Private Storage Bucket persistence** with atomic JSON snapshots.
 - **Docker Compose + Caddy self-hosting** with a persistent volume.
@@ -65,6 +66,14 @@ The board hosts the thread and the deal record. It does not host the merchant’
 - Full self-host: fresh GitHub clone → `docker compose up --build` → board + API + MCP + network page.
 - Persistence survives a Space restart.
 - Custom instance name/tagline/network ID applied from `/api/instance`.
+
+## Honest gaps
+
+- No cross-node settlement or PayPal partner payouts.
+- No per-operator SQLite/Postgres database; persistence is a single JSON snapshot per instance.
+- Auth lacks email verification, password reset and MFA.
+- Moderation covers board posts only; no appeals or notifications.
+- Rate limits are per-process and not shared across replicas.
 
 ## What is next
 
