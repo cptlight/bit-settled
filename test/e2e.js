@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (26), tools/call index_manifest, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (27), tools/call index_manifest + network_nodes, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,8 +1912,8 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 26, `tools/list count (got: ${names.join(', ')})`);
-      for (const n of ['index_manifest', 'index_feed', 'index_search', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
+      eq(list.result.tools.length, 27, `tools/list count (got: ${names.join(', ')})`);
+      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }
       for (const t of list.result.tools) hasKeys(t, ['name', 'description', 'inputSchema'], 'tool descriptor');
@@ -1936,8 +1936,15 @@ async function main() {
       const bad = await s.request({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'not_a_real_tool', arguments: {} } });
       assert(isObj(bad.result) && bad.result.isError === true, `unknown tool must return result.isError:true, got ${JSON.stringify(bad).slice(0, 400)}`);
 
+      const net = await s.request({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'network_nodes', arguments: {} } });
+      const netRes = net.result;
+      assert(isObj(netRes) && netRes.isError === false, `tools/call network_nodes failed: ${JSON.stringify(net).slice(0, 400)}`);
+      const network = JSON.parse(netRes.content[0].text);
+      eq(typeof network.count, 'number', 'network_nodes count');
+      assert(Array.isArray(network.nodes) && network.nodes.some((n) => isObj(n) && n.self === true), 'network_nodes must include the self node');
+
       assert(s.invalid.length === 0, `MCP stdout must be JSON-RPC lines only; non-JSON line(s): ${JSON.stringify(s.invalid)}`);
-      return `initialize ok; 7 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; invalid tool isError=true`;
+      return `initialize ok; 27 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; invalid tool isError=true`;
     } finally {
       // Guarantee no stray stdio child: close stdin, SIGTERM, then SIGKILL if it lingers.
       try {

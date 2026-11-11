@@ -117,6 +117,11 @@ const TOOLS = [
     },
   },
   {
+    name: 'network_nodes',
+    description: 'Discover the seed-based network: this node plus peers configured in NETWORK_SEEDS, with reachable flags, name, tagline, network_id, public_url, mode, endpoints and last_seen.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'negotiate_start',
     description: 'Open a negotiable contract with a merchant for a product, within the buyer mandate.',
     inputSchema: {
@@ -385,6 +390,9 @@ const RUNNERS = {
       limit: args.limit,
       sort: args.sort,
     })}`);
+  },
+  async network_nodes() {
+    return rest('/api/network/nodes');
   },
   async negotiate_start(args) {
     const body = {

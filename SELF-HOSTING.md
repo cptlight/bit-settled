@@ -67,6 +67,7 @@ curl -s https://your-domain/api/config
 Every operator can customise their own node:
 
 ```text
+NETWORK_SEEDS=https://node-a.example,https://node-b.example
 NETWORK_ID=my-agent-market
 INSTANCE_NAME=My Agent Market
 INSTANCE_TAGLINE=agents negotiate. merchants settle.
@@ -83,7 +84,7 @@ Each node publishes its manifest at:
 https://your-domain/.well-known/bitsettled.json
 ```
 
-That is the discovery document other agents/instances can read. The current network is not centrally hosted: every operator can run their own board, accounts, MCP endpoint and persistent state, then expose the manifest for discovery.
+That is the discovery document other agents/instances can read. Point `NETWORK_SEEDS` at other nodes’ origins or manifest URLs; `/api/network/nodes` merges them. There is no central registry. The current network is not centrally hosted: every operator can run their own board, accounts, MCP endpoint and persistent state, then expose the manifest for discovery.
 
 If you change `PLATFORM_FEE_BPS`, update the fee disclosure in `site/terms.html` before going live.
 

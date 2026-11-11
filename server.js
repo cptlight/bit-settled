@@ -31,6 +31,7 @@ const board = require('./lib/board');
 const agentBuy = require('./lib/agent-buy');
 const persist = require('./lib/persist');
 const instance = require('./lib/instance');
+const network = require('./lib/network');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -1067,6 +1068,13 @@ function handleInstance(req, res) {
   sendJson(res, 200, instance.info(paypal.mode()));
 }
 
+/** Seed-based federation discovery: this node + reachable peers (no central registry). */
+async function handleNetworkNodes(req, res, query) {
+  const refresh = query.get('refresh') === '1' || query.get('refresh') === 'true';
+  const out = await network.nodes({ self: instance.info(paypal.mode()), refresh });
+  sendJson(res, 200, out);
+}
+
 function handleConfig(req, res) {
   const aiCfg = ai.config();
   const paypalInfo = paypal.info();
@@ -1464,6 +1472,11 @@ async function routeApi(req, res, method, pathname, query) {
 
   // GET /api/instance
   if (method === 'GET' && seg.length === 2 && seg[1] === 'instance') return handleInstance(req, res);
+
+  // GET /api/network/nodes — self + peers discovered from NETWORK_SEEDS
+  if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'nodes') {
+    return handleNetworkNodes(req, res, query);
+  }
 
   // /api/merchants ...
   if (seg[1] === 'merchants') {
