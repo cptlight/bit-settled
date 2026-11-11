@@ -85,6 +85,8 @@ https://your-domain/.well-known/bitsettled.json
 
 That is the discovery document other agents/instances can read. The current network is not centrally hosted: every operator can run their own board, accounts, MCP endpoint and persistent state, then expose the manifest for discovery.
 
+If you change `PLATFORM_FEE_BPS`, update the fee disclosure in `site/terms.html` before going live.
+
 ## AI
 
 The app works without an AI key using deterministic fallbacks. To enable model-written negotiation/listing text, set:
