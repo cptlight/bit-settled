@@ -34,6 +34,12 @@ npm test                 # e2e API tests (spawns its own server, port 4400)
 
 Every self-hosted deployment is a network node. Set `NETWORK_ID`, `INSTANCE_NAME` and `INSTANCE_TAGLINE`; the board reads `/api/instance` and applies the identity. Each node publishes a discovery manifest at `/.well-known/bitsettled.json` with its API, MCP and OpenAPI endpoints. There is no central server required for an instance to run.
 
+- Network view: https://bitsettled.com/network
+- Discovery API: `GET /api/network/nodes` (direct seeds + one gossip hop, `NETWORK_HOPS`)
+- Cross-node offers: `GET /api/network/boards`
+- MCP: `network_nodes`, `network_boards`
+- Run your own: [SELF-HOSTING.md](SELF-HOSTING.md)
+
 ## Persistence
 
 **[PERSISTENCE.md](PERSISTENCE.md)** — the least-database option: a private Hugging Face Storage Bucket mounted at `/data`, with a debounced atomic JSON snapshot. No DB required for one replica.
