@@ -17,9 +17,9 @@
     log(label || (method + ' ' + path));
     return S.api(path, { method: method, body: body }).then(function (res) { return res; });
   }
-  async function run() {
+  async function run(simulate) {
     if (state.busy) return;
-    state.busy = true; resetSteps(); $('runDemo').disabled = true; $('runDemo').textContent = 'Running…'; $('demoLog').textContent = '';
+    state.busy = true; resetSteps(); $('runDemo').disabled = true; if ($('runSim')) $('runSim').disabled = true; $('runDemo').textContent = 'Running…'; $('demoLog').textContent = '';
     try {
       setStep(1, 'active');
       var title = 'Aurora One — agent demo ' + new Date().toLocaleTimeString();
@@ -51,11 +51,18 @@
       log('Deal: $' + state.post.agreed_price + ' · winner ' + state.post.buyer_agent);
 
       setStep(4, 'active');
-      var auth = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-order', {}, 'POST escrow-order · PayPal AUTHORIZE $235');
+      var auth = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-order', {}, 'POST escrow-order · PayPal AUTHORIZE');
       log('PayPal authorization order ' + (auth.escrow_order_id || '—') + ' · merchant NOT paid.');
+      $('openEscrow').href = 'escrow.html?post=' + encodeURIComponent(state.post.id);
+      if (!simulate && auth.mode === 'paypal') {
+        setStep(4, 'active');
+        $('demoCallout').innerHTML = '<b>PayPal authorization is ready.</b> Opening the official PayPal SDK page. Authorize with a sandbox buyer, then confirm delivery to capture. The merchant is not paid yet.';
+        state.busy = false; $('runDemo').disabled = false; $('runDemo').textContent = 'Run PayPal lifecycle'; if ($('runSim')) $('runSim').disabled = false;
+        setTimeout(function () { location.href = 'escrow.html?post=' + encodeURIComponent(state.post.id); }, 900);
+        return;
+      }
       await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-authorize', { simulate: true }, 'POST escrow-authorize · buyer authorization recorded');
       setStep(4, 'done');
-      $('openEscrow').href = 'escrow.html?post=' + encodeURIComponent(state.post.id);
 
       setStep(5, 'active');
       var paid = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-confirm', { simulate: true }, 'POST escrow-confirm · buyer confirms delivery → CAPTURE');
@@ -65,7 +72,8 @@
       $('demoCallout').innerHTML = '<b>Lifecycle complete.</b> The merchant received payment only after buyer confirmation. Use the item page to inspect every bid and vote; use the PayPal authorization page to see the official JS SDK.';
       S.toast('Full lifecycle complete.', 'ok');
     } catch (err) { fail(err); }
-    state.busy = false; $('runDemo').disabled = false; $('runDemo').textContent = 'Run full lifecycle again';
+    state.busy = false; $('runDemo').disabled = false; $('runSim').disabled = false; $('runDemo').textContent = 'Run PayPal lifecycle';
   }
-  $('runDemo').addEventListener('click', run);
+  $('runDemo').addEventListener('click', function () { run(false); });
+  if ($('runSim')) $('runSim').addEventListener('click', function () { run(true); });
 })();
