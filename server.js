@@ -30,6 +30,7 @@ const mcpHttp = require('./lib/mcp-http');
 const board = require('./lib/board');
 const agentBuy = require('./lib/agent-buy');
 const persist = require('./lib/persist');
+const instance = require('./lib/instance');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -1062,6 +1063,10 @@ async function handleAgentPurchase(req, res) {
 }
 
 /** Public runtime config — never exposes secrets. */
+function handleInstance(req, res) {
+  sendJson(res, 200, instance.info(paypal.mode()));
+}
+
 function handleConfig(req, res) {
   const aiCfg = ai.config();
   const paypalInfo = paypal.info();
@@ -1429,6 +1434,10 @@ const server = http.createServer(async (req, res) => {
     return mcpHttp.handle(req, res);
   }
 
+  // Public instance identity for distributed/self-hosted nodes.
+  if (pathname === '/api/instance' && method === 'GET') return handleInstance(req, res);
+  if (pathname === '/.well-known/bitsettled.json' && method === 'GET') return handleInstance(req, res);
+
   // Agent card at the well-known location (outside the /api namespace).
   if ((method === 'GET' || method === 'HEAD') && pathname === '/.well-known/settled-agent.json') {
     return handleAgentManifest(req, res);
@@ -1452,6 +1461,9 @@ async function routeApi(req, res, method, pathname, query) {
 
   // GET /api/config
   if (method === 'GET' && seg.length === 2 && seg[1] === 'config') return handleConfig(req, res);
+
+  // GET /api/instance
+  if (method === 'GET' && seg.length === 2 && seg[1] === 'instance') return handleInstance(req, res);
 
   // /api/merchants ...
   if (seg[1] === 'merchants') {
@@ -1530,6 +1542,8 @@ async function routeApi(req, res, method, pathname, query) {
       if (seg[3] === 'claim') return handleClaim(req, res, orderId);
     }
   }
+
+  if (pathname === '/.well-known/bitsettled.json' && method === 'GET') return handleInstance(req, res);
 
   // /api/agent/purchase — negotiate + create the order in one call.
   if (seg.length === 3 && seg[1] === 'agent' && seg[2] === 'purchase' && method === 'POST') {
