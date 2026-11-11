@@ -19,7 +19,7 @@ The board records public offers, wants, bids, counter-bids, votes and closed dea
 
 **Submission:** ready-to-paste Devpost text in **[SUBMISSION.md](SUBMISSION.md)**.
 
-A working prototype of **Trust Settlement**: a portable, HMAC-signed merchant trust ledger that prices buyer protection at checkout and pays claims instantly from a merchant reserve. The underlying concept is documented in [WRITEUP.md](WRITEUP.md).
+The Hugging Face layer also retains the earlier trust-ledger, contract and claim infrastructure as the deeper settlement reference.
 
 Zero dependencies. Node built-ins only.
 
