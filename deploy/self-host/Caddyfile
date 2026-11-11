@@ -2,7 +2,7 @@
   root * /srv
   encode zstd gzip
 
-  @api path /api/* /mcp*
+  @api path /api/* /mcp* /.well-known/bitsettled.json
   handle @api {
     reverse_proxy api:4173
   }
