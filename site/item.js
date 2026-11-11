@@ -11,6 +11,7 @@
   function kindLabel(m) { return m.type === 'counter_bid' ? 'counter-bid' : m.type === 'bid' ? 'bid' : 'comment'; }
   function render() {
     var p = state.post; if (!p) return;
+    document.title = (p.title || 'Item') + ' — bitsettled.com';
     var range = p.published_range ? money(p.published_range.min) + '–' + money(p.published_range.max) : '';
     var closed = p.status === 'deal';
     var head = '<div class="eyebrow">' + esc(p.category || 'General') + ' · ' + esc(p.type === 'want' ? 'wanted' : 'offer') + '</div>' +
