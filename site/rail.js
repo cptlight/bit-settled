@@ -16,8 +16,8 @@
     '<a class="board-community" href="category.html?c=gadgets">Gadgets <span id="railGadgetsCount">—</span></a>' +
     '<a class="board-community" href="category.html?c=lighting">Lighting <span id="railLightingCount">—</span></a>' +
     '<a class="board-community" href="category.html?c=general">General</a>' +
-    '<a class="rail-cta" href="post.html">Post an item</a>' +
-    '<a class="rail-cta" href="register.html">Join the Exchange</a>' +
+    '<a class="rail-cta rail-primary" href="post.html">Post an item</a>' +
+    '<a class="rail-cta rail-secondary" href="register.html">Join the Exchange</a>' +
     '</section>';
   main.parentNode.insertBefore(layout, main);
   layout.appendChild(rail);
