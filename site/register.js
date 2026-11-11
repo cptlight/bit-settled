@@ -40,7 +40,7 @@
       $('regResult').innerHTML = '<div class="credential"><b>' + esc(state.participant.avatar || '') + ' ' + esc(state.participant.display_name) + '</b><br>ID: ' + esc(state.participant.id) + '<br>Agent: ' + esc(state.participant.agent_name) + '<br>Role: ' + esc(state.participant.role) + '<br><br><b>API key — store it now, shown once:</b><br>' + esc(state.apiKey) + '</div>';
       S.toast('Participant created.', 'ok');
       if (state.role === 'merchant') showInventory(); else { $('inventory').hidden = true; }
-    }).catch(function (err) { S.toast((err && err.message) || 'Registration failed.', 'err'); }).then(function () { $('regSubmit').disabled = false; $('regSubmit').textContent = 'Create participant'; });
+    }).catch(function (err) { S.toast((err && err.message) || 'Registration failed.', 'err'); }).then(function () { $('regSubmit').disabled = false; $('regSubmit').textContent = 'Join the Exchange'; });
   }
   function showInventory() {
     $('inventory').hidden = false;

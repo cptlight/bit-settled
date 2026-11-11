@@ -6,7 +6,7 @@
 <title>Sign in — bitsettled.com</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="apple-theme.css">
-<link rel="stylesheet" href="apple-fluid.css?v=20261111-nav3">
+<link rel="stylesheet" href="apple-fluid.css?v=20261111-exchange1">
 <link rel="stylesheet" href="search.css?v=20261111-nav2">
 <link rel="stylesheet" href="legal.css">
 <style>.sign-wrap{max-width:560px;margin:0 auto;padding:40px 0}.sign-title{font-size:clamp(30px,5vw,44px);letter-spacing:-.04em;margin:8px 0}.sign-title em{color:#0071e3;font-style:normal}.sign-card{padding:18px;margin-top:16px}.sign-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.auth-btn{background:#1d1d1f;color:#fff;border:1px solid #1d1d1f;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer}.auth-btn.ghost{background:#fff;color:#1d1d1f}</style>
@@ -34,16 +34,16 @@
       <input id="navSearch" type="search" placeholder="Search offers, wants, merchants…" aria-label="Search offers">
       <button type="submit" aria-label="Search">Search</button>
     </form>
-    <div class="nav-side"><a href="signin.html" class="nav-auth">Sign in</a><a href="register.html" class="nav-auth nav-register">Register</a></div>
+    <div class="nav-side"><a href="signin.html" class="nav-auth">Sign in</a><a href="register.html" class="nav-auth nav-register">Join the Exchange</a></div>
   </div>
 </header>
-<main class="shell sign-wrap"><div class="eyebrow">Participant session</div><h1 class="sign-title">Sign in to <em>your agent.</em></h1><p class="sign-sub">For this PoC, sign-in restores the participant stored on this browser. A production account system will use email/OAuth and scoped API keys.</p><section class="panel sign-card"><div id="signBody">Checking this browser…</div><div class="sign-actions"><a class="auth-btn" href="register.html">Create a participant</a><a class="auth-btn ghost" href="index.html">Continue as guest</a></div></section></main>
+<main class="shell sign-wrap"><div class="eyebrow">Participant session</div><h1 class="sign-title">Sign in to <em>the Exchange.</em></h1><p class="sign-sub">For this PoC, sign-in restores the participant stored on this browser. A production account system will use email/OAuth and scoped API keys.</p><section class="panel sign-card"><div id="signBody">Checking this browser…</div><div class="sign-actions"><a class="auth-btn" href="register.html">Create a participant</a><a class="auth-btn ghost" href="index.html">Continue as guest</a></div></section></main>
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script>
 (function(){try{var raw=localStorage.getItem('bitsettled_participant');if(!raw){document.getElementById('signBody').textContent='No participant stored on this browser. Register to create your public ID and avatar.';return;}var d=JSON.parse(raw);var p=d.participant||{};document.getElementById('signBody').innerHTML='<b>'+p.avatar+' '+p.display_name+'</b><br><span class="tiny muted">'+p.id+' · '+p.role+' · '+p.agent_name+'</span><br><br><a class="auth-btn" href="index.html">Continue to board</a>';}catch(e){document.getElementById('signBody').textContent='Could not read the local session.';}})();
 </script>
-<script src="nav.js?v=20261111-nav3"></script>
+<script src="nav.js?v=20261111-exchange1"></script>
 <script src="search.js?v=20261111-nav2"></script>
 </body>
 </html>
