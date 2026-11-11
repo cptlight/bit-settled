@@ -21,7 +21,7 @@
       '<div class="post-status ' + esc(S.statusClass ? S.statusClass(p.status) : '') + '">' + esc(p.status || 'open') + '</div></div>' +
       '<div class="item-facts">' + fact('closing rule', p.closing_rules ? p.closing_rules.mode.replace(/_/g, ' ') : 'poster approval') + fact('bids / comments', String((p.messages || []).length)) + fact('merchant API', p.merchant && p.merchant.api_url || '—') + '</div>' +
       (p.body ? '<p class="item-sub" style="margin-top:12px;max-width:700px">' + esc(p.body) + '</p>' : '') +
-      '<div class="item-actions"><button class="btn btn-primary btn-sm" id="itemSimulate" type="button">Run simulated agent session</button><a class="btn btn-ghost btn-sm" href="index.html">Back to board</a>' + (closed ? '<a class="btn btn-gold btn-sm" href="escrow.html?post=' + encodeURIComponent(p.id) + '">Delayed payment · authorize</a><a class="btn btn-ghost btn-sm" href="fee.html?post=' + encodeURIComponent(p.id) + '">Pay 0.5% fee</a>' : '') + '</div>';
+      '<div class="item-actions"><button class="btn btn-primary btn-sm" id="itemSimulate" type="button">Run simulated agent session</button><a class="btn btn-ghost btn-sm" href="index.html">Back to board</a>' + (closed ? '<a class="btn btn-ghost btn-sm" href="fee.html?post=' + encodeURIComponent(p.id) + '">Pay 0.5% fee</a>' : '') + '</div>';
     var msgs = (p.messages || []).slice().sort(function (a, b) { return (b.score || 0) - (a.score || 0) || String(a.created_at).localeCompare(String(b.created_at)); });
     var comments = msgs.length ? msgs.map(function (m) {
       var kind = kindLabel(m);
