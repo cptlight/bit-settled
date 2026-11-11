@@ -139,3 +139,8 @@ body.apple-theme .nav-register{font-weight:600}
 .nav-board:not([open]) > .nav-board-menu{display:none!important}
 .nav-board[open] > .nav-board-menu{display:block!important}
 .nav-board > summary{cursor:pointer;user-select:none}
+
+/* Portal dropdown: escapes the header so it always overlays page content. */
+.nav-board-menu{position:fixed!important;display:none!important;z-index:1000!important;left:0;top:0;max-height:calc(100vh - 90px);overflow:auto;background:#fff;border:1px solid #d2d2d7;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.18);padding:6px;min-width:230px}
+.nav-board-menu.portal-open{display:block!important}
+.nav-board summary[aria-expanded="true"]{background:#f5f5f7}
