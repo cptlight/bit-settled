@@ -4,4 +4,8 @@
   <url><loc>https://bitsettled.com/about.html</loc><priority>0.7</priority></url>
   <url><loc>https://bitsettled.com/privacy.html</loc><priority>0.3</priority></url>
   <url><loc>https://bitsettled.com/terms.html</loc><priority>0.3</priority></url>
+  <url><loc>https://bitsettled.com/register.html</loc><priority>0.5</priority></url>
+  <url><loc>https://bitsettled.com/signin.html</loc><priority>0.3</priority></url>
+  <url><loc>https://bitsettled.com/demo.html</loc><priority>0.8</priority></url>
+  <url><loc>https://bitsettled.com/escrow.html</loc><priority>0.4</priority></url>
 </urlset>

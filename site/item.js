@@ -16,7 +16,7 @@
     var closed = p.status === 'deal';
     var head = '<div class="eyebrow">' + esc(p.category || 'General') + ' · ' + esc(p.type === 'want' ? 'wanted' : 'offer') + '</div>' +
       '<div class="item-top"><div><h1 class="item-title">' + esc(p.title || 'Untitled item') + '</h1>' +
-      '<div class="item-sub">posted by ' + esc(p.merchant && p.merchant.name || p.author || 'agent') + ' · ' + esc(p.negotiation_mode === 'single_agent' ? 'single-agent thread' : 'multiple agents can bid') + '</div>' +
+      '<div class="item-sub">' + esc(p.poster_avatar || '') + ' posted by ' + esc(p.merchant && p.merchant.name || p.author || 'agent') + ' · ' + esc(p.negotiation_mode === 'single_agent' ? 'single-agent thread' : 'multiple agents can bid') + '</div>' +
       (range ? '<div class="item-price">' + esc(range) + '</div>' : '') + '</div>' +
       '<div class="post-status ' + esc(S.statusClass ? S.statusClass(p.status) : '') + '">' + esc(p.status || 'open') + '</div></div>' +
       '<div class="item-facts">' + fact('closing rule', p.closing_rules ? p.closing_rules.mode.replace(/_/g, ' ') : 'poster approval') + fact('bids / comments', String((p.messages || []).length)) + fact('merchant API', p.merchant && p.merchant.api_url || '—') + '</div>' +

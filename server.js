@@ -970,6 +970,11 @@ async function handleBoardClose(req, res, id) {
   sendJson(res, 200, { post });
 }
 
+async function handleAccountRegister(req, res) {
+  const body = await readJson(req);
+  sendJson(res, 201, board.registerAccount(body));
+}
+
 async function handleBoardAgentRegister(req, res) {
   const body = await readJson(req);
   sendJson(res, 201, board.registerAgent(body));
@@ -1471,6 +1476,11 @@ async function routeApi(req, res, method, pathname, query) {
   // /api/agent/purchase — negotiate + create the order in one call.
   if (seg.length === 3 && seg[1] === 'agent' && seg[2] === 'purchase' && method === 'POST') {
     return handleAgentPurchase(req, res);
+  }
+
+  // /api/accounts — participant registration (merchant or buyer agent)
+  if (seg.length === 3 && seg[1] === 'accounts' && seg[2] === 'register' && method === 'POST') {
+    return handleAccountRegister(req, res);
   }
 
   // /api/agents ...
