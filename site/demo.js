@@ -19,7 +19,7 @@
   }
   async function run(simulate) {
     if (state.busy) return;
-    state.busy = true; resetSteps(); $('runDemo').disabled = true; if ($('runSim')) $('runSim').disabled = true; $('runDemo').textContent = 'Running…'; $('demoLog').textContent = '';
+    state.busy = true; resetSteps(); $('runDemo').disabled = true; if ($('runSim')) $('runSim').disabled = true; if ($('resetDemo')) $('resetDemo').disabled = true; $('runDemo').textContent = 'Running…'; $('demoLog').textContent = '';
     try {
       setStep(1, 'active');
       var title = 'Aurora One — agent demo ' + new Date().toLocaleTimeString();
@@ -72,8 +72,19 @@
       $('demoCallout').innerHTML = '<b>Lifecycle complete.</b> The merchant received payment only after buyer confirmation. Use the item page to inspect every bid and vote; use the PayPal authorization page to see the official JS SDK.';
       S.toast('Full lifecycle complete.', 'ok');
     } catch (err) { fail(err); }
-    state.busy = false; $('runDemo').disabled = false; $('runSim').disabled = false; $('runDemo').textContent = 'Run PayPal lifecycle';
+    state.busy = false; $('runDemo').disabled = true; $('runSim').disabled = true; if ($('resetDemo')) $('resetDemo').disabled = false; $('runDemo').textContent = 'Lifecycle complete';
   }
+  function resetDemo() {
+    resetSteps();
+    $('demoLog').textContent = 'Ready. Choose PayPal lifecycle or deterministic simulation.';
+    $('demoCallout').innerHTML = '<b>PayPal-first.</b> The live path opens the official PayPal authorization page and stops before capture, so the merchant remains unpaid until the buyer confirms delivery.';
+    $('openItem').href = '#'; $('openEscrow').href = '#';
+    $('runDemo').disabled = false; $('runDemo').textContent = 'Run PayPal lifecycle';
+    $('runSim').disabled = false; if ($('resetDemo')) $('resetDemo').disabled = true;
+    state.post = null;
+  }
+
+  if ($('resetDemo')) $('resetDemo').addEventListener('click', resetDemo);
   $('runDemo').addEventListener('click', function () { run(false); });
   if ($('runSim')) $('runSim').addEventListener('click', function () { run(true); });
 })();

@@ -843,7 +843,7 @@ function handleLiveGet(req, res, id) {
 
 // ------------------------------------------------ Reddit-style board --
 function handleBoardList(req, res, query) {
-  sendJson(res, 200, board.list({ board: query.get('board') || 'all' }));
+  sendJson(res, 200, board.list({ board: query.get('board') || 'all', include_stale: query.get('include_stale') === '1' }));
 }
 
 function handleBoardGet(req, res, id) {
@@ -967,6 +967,12 @@ async function handleBoardFeeCapture(req, res, id) {
   const capture = await paypal.captureOrder(paypalOrderId);
   const updated = board.markFeeCollected(id, { paypal_order_id: paypalOrderId, capture_id: capture && capture.id });
   sendJson(res, 200, { post: updated, capture, mode: paypal.mode() });
+}
+
+async function handleBoardArchive(req, res, id, archived) {
+  const post = board.archivePost(id, archived);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  sendJson(res, 200, { post });
 }
 
 async function handleBoardClose(req, res, id) {
@@ -1512,6 +1518,8 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 3 && seg[2] === 'offers' && method === 'POST') return handleBoardOffer(req, res);
     if (seg.length === 3 && seg[2] === 'wants' && method === 'POST') return handleBoardWant(req, res);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'close' && method === 'POST') return handleBoardClose(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'archive' && method === 'POST') return handleBoardArchive(req, res, seg[3], true);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'unarchive' && method === 'POST') return handleBoardArchive(req, res, seg[3], false);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'simulate' && method === 'POST') return handleBoardSimulate(req, res, seg[3]);
     if (seg.length === 7 && seg[2] === 'posts' && seg[4] === 'comments' && seg[6] === 'vote' && method === 'POST') return handleBoardCommentVote(req, res, seg[3], seg[5]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'escrow-order' && method === 'POST') return handleBoardEscrowOrder(req, res, seg[3]);
