@@ -846,6 +846,89 @@
           }
         }
       }
+    },
+    "/api/board/posts/{id}/escrow-order": {
+      "post": {
+        "operationId": "escrow_order",
+        "summary": "Create a PayPal order with intent=AUTHORIZE for delayed capture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Escrow state"
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/escrow-authorize": {
+      "post": {
+        "operationId": "escrow_authorize",
+        "summary": "Store the buyer authorization without capturing; merchant is not paid",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Escrow state"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/board/posts/{id}/escrow-confirm": {
+      "post": {
+        "operationId": "escrow_confirm",
+        "summary": "Buyer confirms delivery; capture the authorization and pay the merchant",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Escrow state"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

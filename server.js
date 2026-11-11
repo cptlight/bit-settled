@@ -882,6 +882,61 @@ async function handleBoardCommentVote(req, res, id, messageId) {
   sendJson(res, 200, out);
 }
 
+async function handleBoardEscrowOrder(req, res, id) {
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
+  if (post.merchant_paid) return fail(res, 409, 'ALREADY_PAID', 'merchant already paid');
+  if (post.payment_status === 'authorized') return sendJson(res, 200, { post, already_authorized: true });
+  const amount = Number(post.agreed_price) || 0;
+  if (!(amount > 0)) return fail(res, 409, 'NO_AMOUNT', 'no agreed price');
+  const site = (process.env.PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, '');
+  const order = await paypal.createAuthorization({
+    amount,
+    currency: 'USD',
+    returnUrl: site + '/escrow.html?post=' + encodeURIComponent(id),
+  });
+  const updated = board.setEscrowOrder(id, { escrow_order_id: order.id });
+  sendJson(res, 200, {
+    post: updated,
+    escrow_order_id: order.id,
+    approval_url: order.approval_url || null,
+    amount,
+    mode: paypal.mode(),
+  });
+}
+
+async function handleBoardEscrowAuthorize(req, res, id) {
+  const body = await readJson(req);
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
+  let authorizationId = body.authorization_id || null;
+  const paypalOrderId = body.paypal_order_id || post.escrow_order_id;
+  if (!authorizationId && paypal.isLive() && paypalOrderId) {
+    const order = await paypal.getOrder(paypalOrderId);
+    const pu = order && order.purchase_units && order.purchase_units[0];
+    const auth = pu && pu.payments && pu.payments.authorizations && pu.payments.authorizations[0];
+    authorizationId = auth && auth.id;
+  }
+  if (!authorizationId && paypal.isLive()) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer approval not found on the PayPal order');
+  const updated = board.markEscrowAuthorized(id, { authorization_id: authorizationId || ('SIM-AUTH-' + randHex(8)) });
+  sendJson(res, 200, { post: updated, authorization_id: authorizationId, mode: paypal.mode(), merchant_paid: false });
+}
+
+async function handleBoardEscrowConfirm(req, res, id) {
+  const body = await readJson(req);
+  const post = board.get(id);
+  if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
+  if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
+  if (post.merchant_paid) return sendJson(res, 200, { post, already_paid: true });
+  const authorizationId = body.authorization_id || post.authorization_id;
+  if (!authorizationId) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer has not authorized payment yet');
+  const capture = await paypal.captureAuthorization(authorizationId);
+  const updated = board.markEscrowCaptured(id, { authorization_id: authorizationId, delivery_confirmed_at: data.nowIso() });
+  sendJson(res, 200, { post: updated, capture, mode: paypal.mode() });
+}
+
 async function handleBoardFeeOrder(req, res, id) {
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
@@ -1433,6 +1488,9 @@ async function routeApi(req, res, method, pathname, query) {
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'close' && method === 'POST') return handleBoardClose(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'simulate' && method === 'POST') return handleBoardSimulate(req, res, seg[3]);
     if (seg.length === 7 && seg[2] === 'posts' && seg[4] === 'comments' && seg[6] === 'vote' && method === 'POST') return handleBoardCommentVote(req, res, seg[3], seg[5]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'escrow-order' && method === 'POST') return handleBoardEscrowOrder(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'escrow-authorize' && method === 'POST') return handleBoardEscrowAuthorize(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'escrow-confirm' && method === 'POST') return handleBoardEscrowConfirm(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-order' && method === 'POST') return handleBoardFeeOrder(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'fee-capture' && method === 'POST') return handleBoardFeeCapture(req, res, seg[3]);
     if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'messages' && method === 'POST') return handleBoardMessage(req, res, seg[3]);
