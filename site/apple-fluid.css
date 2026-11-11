@@ -134,3 +134,8 @@ body.apple-theme .nav-side{display:flex;align-items:center;gap:6px;margin-left:a
 body.apple-theme .nav-auth{font-family:var(--apple-sans)!important;font-size:11px!important;font-weight:500!important;color:#1d1d1f!important;text-decoration:none;border:1px solid #1d1d1f;border-radius:8px;padding:6px 10px;white-space:nowrap;background:#fff}
 body.apple-theme .nav-auth:hover{background:#1d1d1f;color:#fff!important}
 body.apple-theme .nav-register{font-weight:600}
+
+/* Explicit dropdown states: never show the menu unless the summary is open. */
+.nav-board:not([open]) > .nav-board-menu{display:none!important}
+.nav-board[open] > .nav-board-menu{display:block!important}
+.nav-board > summary{cursor:pointer;user-select:none}
