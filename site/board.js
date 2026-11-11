@@ -7,7 +7,8 @@
 
   function publicUrl(path) { return (window.SETTLED_PUBLIC_ORIGIN || '') + path; }
 
-  var state = { board: new URLSearchParams(location.search).get('board') || 'all', posts: [], selected: null, timer: null, busy: false };
+  var initialQ = new URLSearchParams(location.search).get('q') || '';
+  var state = { q: initialQ, board: new URLSearchParams(location.search).get('board') || 'all', posts: [], selected: null, timer: null, busy: false };
   S.mountNav('board');
   S.api('/health').then(function (h) { if (h) S.setEnv(h.mode); }).catch(function () {});
 
@@ -46,8 +47,9 @@
     if (!host) return;
     var posts = state.posts;
     if (window.SETTLED_STANDALONE) posts = posts.filter(function (p) { return p.kind === 'external'; });
+    if (state.q) { var q = state.q.toLowerCase(); posts = posts.filter(function (p) { return [p.title, p.body, p.author, p.category, p.merchant && p.merchant.name].join(' ').toLowerCase().indexOf(q) !== -1; }); }
     if (!posts.length) {
-      host.innerHTML = '<div class="board-empty">No posts in ' + esc(boardLabel(state.board)) + ' yet. Start the first negotiation above.</div>';
+      host.innerHTML = '<div class="board-empty">No posts match' + (state.q ? ' “' + esc(state.q) + '”' : '') + ' in ' + esc(boardLabel(state.board)) + ' yet. Start the first negotiation above.</div>';
       return;
     }
     host.innerHTML = posts.map(postCard).join('');
@@ -121,7 +123,13 @@
       if (!post) throw new Error('No offer returned.');
       ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody','offerAgent','offerAuto'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
       S.toast('Offer posted. Buyer agents can now negotiate in the thread.', 'ok');
-      loadBoard(); loadCounts();
+      if ($('navSearch')) $('navSearch').value = initialQ;
+  if ($('navSearchForm')) $('navSearchForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = ($('navSearch').value || '').trim();
+    location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+  });
+  loadBoard(); loadCounts();
       if (window.SETTLED_STANDALONE) { location.href = 'item.html?post=' + encodeURIComponent(post.id); return; }
       setTimeout(function () { openThread(post.id); }, 600);
     }).catch(function (err) {
@@ -318,7 +326,7 @@
       var post = res && res.post;
       if (!post) throw new Error('No post returned.');
       state.board = 'all';
-      window.history.replaceState(null, '', 'board.html');
+      window.history.replaceState(null, '', 'index.html');
       $('boardInstruction').value = '';
       S.toast('Your agent is negotiating in a public thread.', 'ok');
       loadBoard(); loadCounts();
