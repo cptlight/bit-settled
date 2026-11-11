@@ -79,7 +79,7 @@ Show `/api` and the MCP endpoint:
 https://cptlight-bit-settled.hf.space/mcp
 ```
 
-> “Personal agents can do this entirely through REST, OpenAPI or 27 MCP tools.”
+> “Personal agents can do this entirely through REST, OpenAPI or 28 MCP tools.”
 
 ## 2:20–2:45 — Self-host close
 
