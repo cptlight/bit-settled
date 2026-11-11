@@ -3,7 +3,7 @@
   var S = window.Settled; if (!S) return;
   var $ = function (id) { return document.getElementById(id); };
   var postId = new URLSearchParams(location.search).get('post') || '';
-  var state = { post: null, orderId: null, approvalUrl: null, clientId: null, mode: null, busy: false };
+  var state = { post: null, orderId: null, approvalUrl: null, clientId: null, mode: null, busy: false, sim: false };
   function esc(v) { return S.esc(v); }
   function money(v) { return S.money(v); }
   function step(title, status, cls) { return '<div class="esc-step"><b>' + esc(title) + '</b><span class="esc-state ' + (cls || 'pending') + '">' + esc(status) + '</span></div>'; }
@@ -24,6 +24,8 @@
     if (authorized) {
       $('escPaypal').innerHTML = '<div class="esc-step"><b>Payment authorized — merchant not paid yet.</b><span class="esc-state good">held</span></div>';
       $('escActions').innerHTML = '<button class="btn btn-primary" id="escConfirm" type="button">Buyer confirms delivery → release payment</button>';
+      $('escActions').innerHTML += '<button class="btn btn-ghost" id="escSimConfirm" type="button">Demo: simulated release</button>';
+      if ($('escSimConfirm')) $('escSimConfirm').addEventListener('click', function () { confirmDelivery(true); });
       $('escConfirm').addEventListener('click', confirmDelivery);
       $('escNote').textContent = 'The authorization is held until buyer confirmation. The merchant receives money only after capture.';
       return;
@@ -40,7 +42,7 @@
       }).catch(function (err) { $('escPaypal').innerHTML = '<div class="tiny">' + esc(err && err.message || 'Could not create authorization') + '</div>'; });
       return;
     }
-    if (state.mode === 'paypal' && state.clientId) mountPayPal(); else {
+    if (state.mode === 'paypal' && state.clientId) { mountPayPal(); $('escActions').innerHTML = '<button class="btn btn-ghost btn-sm" id="escSimAuth" type="button">Demo: simulated authorization</button>'; if ($('escSimAuth')) $('escSimAuth').addEventListener('click', authorizeSim); } else {
       $('escActions').innerHTML = '<button class="btn btn-primary" id="escSimAuth" type="button">Simulate buyer authorization</button>';
       $('escSimAuth').addEventListener('click', authorizeSim);
       $('escNote').textContent = 'SIM mode: no real PayPal authorization is created. In live mode this becomes a real PayPal authorization.';
@@ -70,11 +72,11 @@
     return S.api('/board/posts/' + encodeURIComponent(postId) + '/escrow-authorize', { method: 'POST', body: { paypal_order_id: paypalOrderId } }).then(function (res) { state.post = res.post; render(); S.toast('Payment authorized. Merchant not paid yet.', 'ok'); });
   }
   function authorizeSim() {
-    S.api('/board/posts/' + encodeURIComponent(postId) + '/escrow-authorize', { method: 'POST', body: { paypal_order_id: state.orderId } }).then(function (res) { state.post = res.post; render(); }).catch(function (err) { S.toast(err && err.message || 'Authorization failed', 'err'); });
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/escrow-authorize', { method: 'POST', body: { paypal_order_id: state.orderId, simulate: true } }).then(function (res) { state.post = res.post; render(); }).catch(function (err) { S.toast(err && err.message || 'Authorization failed', 'err'); });
   }
-  function confirmDelivery() {
+  function confirmDelivery(simulate) {
     if (state.busy) return; state.busy = true;
-    S.api('/board/posts/' + encodeURIComponent(postId) + '/escrow-confirm', { method: 'POST', body: { authorization_id: state.post && state.post.authorization_id } }).then(function (res) { state.post = res.post; render(); S.toast('Delivery confirmed. Merchant paid.', 'ok'); }).catch(function (err) { S.toast(err && err.message || 'Capture failed', 'err'); }).then(function () { state.busy = false; });
+    S.api('/board/posts/' + encodeURIComponent(postId) + '/escrow-confirm', { method: 'POST', body: { authorization_id: state.post && state.post.authorization_id, simulate: Boolean(simulate) } }).then(function (res) { state.post = res.post; render(); S.toast('Delivery confirmed. Merchant paid.', 'ok'); }).catch(function (err) { S.toast(err && err.message || 'Capture failed', 'err'); }).then(function () { state.busy = false; });
   }
   if (!postId) { $('escSteps').innerHTML = '<div class="esc-step"><b>No deal in this link.</b></div>'; return; }
   S.api('/config').then(function (cfg) { state.clientId = cfg && cfg.paypal && cfg.paypal.client_id; state.mode = cfg && cfg.paypal && cfg.paypal.mode; return S.api('/board/posts/' + encodeURIComponent(postId)); }).then(function (res) {

@@ -911,15 +911,16 @@ async function handleBoardEscrowAuthorize(req, res, id) {
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
+  const simulation = body.simulate === true;
   let authorizationId = body.authorization_id || null;
   const paypalOrderId = body.paypal_order_id || post.escrow_order_id;
-  if (!authorizationId && paypal.isLive() && paypalOrderId) {
+  if (!authorizationId && !simulation && paypal.isLive() && paypalOrderId) {
     const order = await paypal.getOrder(paypalOrderId);
     const pu = order && order.purchase_units && order.purchase_units[0];
     const auth = pu && pu.payments && pu.payments.authorizations && pu.payments.authorizations[0];
     authorizationId = auth && auth.id;
   }
-  if (!authorizationId && paypal.isLive()) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer approval not found on the PayPal order');
+  if (!authorizationId && !simulation && paypal.isLive()) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer approval not found on the PayPal order');
   const updated = board.markEscrowAuthorized(id, { authorization_id: authorizationId || ('SIM-AUTH-' + randHex(8)) });
   sendJson(res, 200, { post: updated, authorization_id: authorizationId, mode: paypal.mode(), merchant_paid: false });
 }
@@ -932,7 +933,9 @@ async function handleBoardEscrowConfirm(req, res, id) {
   if (post.merchant_paid) return sendJson(res, 200, { post, already_paid: true });
   const authorizationId = body.authorization_id || post.authorization_id;
   if (!authorizationId) return fail(res, 409, 'AUTHORIZATION_NOT_FOUND', 'buyer has not authorized payment yet');
-  const capture = await paypal.captureAuthorization(authorizationId);
+  const capture = body.simulate === true
+    ? { id: 'SIM-CAP-' + randHex(8), status: 'COMPLETED', simulated: true }
+    : await paypal.captureAuthorization(authorizationId);
   const updated = board.markEscrowCaptured(id, { authorization_id: authorizationId, delivery_confirmed_at: data.nowIso() });
   sendJson(res, 200, { post: updated, capture, mode: paypal.mode() });
 }
