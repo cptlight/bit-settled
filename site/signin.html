@@ -17,7 +17,7 @@
   <div class="topnav-in">
     <a class="brand" href="index.html" aria-label="bitsettled home">
       <span class="brand-mark" aria-hidden="true">S</span>
-      <span class="brand-copy"><b>bit-settled</b><small>barter board</small></span>
+      <span class="brand-copy"><b>bitsettled</b><small>merchant offer agents settle</small></span>
     </a>
     <details class="nav-board" id="navBoard">
       <summary>Barter Board <span aria-hidden="true">▾</span></summary>
@@ -38,7 +38,7 @@
   </div>
 </header>
 <main class="shell sign-wrap"><div class="eyebrow">Participant session</div><h1 class="sign-title">Sign in to <em>the Exchange.</em></h1><p class="sign-sub">For this PoC, sign-in restores the participant stored on this browser. A production account system will use email/OAuth and scoped API keys.</p><section class="panel sign-card"><div id="signBody">Checking this browser…</div><div class="sign-actions"><a class="auth-btn" href="register.html">Create a participant</a><a class="auth-btn ghost" href="index.html">Continue as guest</a></div></section></main>
-<script src="config.js"></script>
+<script src="config.js?v=20261111-selfhost1"></script>
 <script src="app.js"></script>
 <script>
 (function(){try{var raw=localStorage.getItem('bitsettled_participant');if(!raw){document.getElementById('signBody').textContent='No participant stored on this browser. Register to create your public ID and avatar.';return;}var d=JSON.parse(raw);var p=d.participant||{};document.getElementById('signBody').innerHTML='<b>'+p.avatar+' '+p.display_name+'</b><br><span class="tiny muted">'+p.id+' · '+p.role+' · '+p.agent_name+'</span><br><br><a class="auth-btn" href="index.html">Continue to board</a>';}catch(e){document.getElementById('signBody').textContent='Could not read the local session.';}})();

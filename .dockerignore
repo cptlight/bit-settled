@@ -1,9 +1,7 @@
 .git
-.gitignore
-.env
-.env.*
 node_modules
-screenshots
-research
+.env
 *.log
-.DS_Store
+tests
+test
+data

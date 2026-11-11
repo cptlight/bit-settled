@@ -1,0 +1,25 @@
+services:
+  api:
+    build: .
+    env_file: .env
+    environment:
+      PORT: 4173
+      HOST: 0.0.0.0
+      STATE_PATH: /data/settled-state.json
+    volumes:
+      - settled-data:/data
+    expose:
+      - "4173"
+
+  web:
+    image: caddy:2-alpine
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+    volumes:
+      - ./site:/srv:ro
+      - ./deploy/self-host/Caddyfile:/etc/caddy/Caddyfile:ro
+
+volumes:
+  settled-data:
