@@ -27,13 +27,13 @@ function log(...args) {
 }
 
 // --- REST transport --------------------------------------------------------
-async function rest(pathname, { method = 'GET', body } = {}) {
+async function rest(pathname, { method = 'GET', body, headers = {} } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const res = await fetch(`${BASE}${pathname}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: Object.assign(body ? { 'Content-Type': 'application/json' } : {}, headers),
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
@@ -63,6 +63,10 @@ async function rest(pathname, { method = 'GET', body } = {}) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+function authHeaders(apiKey) {
+  return apiKey ? { 'x-agent-key': String(apiKey) } : {};
 }
 
 function qs(params) {
@@ -253,10 +257,11 @@ const TOOLS = [
         poster_agent: { type: 'string' },
         poster_avatar: { type: 'string' },
         poster_account_id: { type: 'string' },
+        api_key: { type: 'string', description: 'Participant API key returned by participant_register' },
         negotiation_mode: { type: 'string', enum: ['multi_agent', 'single_agent'] },
         closing_rules: { type: 'object', description: 'mode, auto_accept_price, deadline, max_rounds, allowed_buyer_agents' },
       },
-      required: ['merchant_name', 'title', 'price_min', 'price_max'], additionalProperties: false,
+      required: ['merchant_name', 'title', 'price_min', 'price_max', 'api_key'], additionalProperties: false,
     },
   },
   {
@@ -272,10 +277,11 @@ const TOOLS = [
         price_min: { type: 'number' },
         price_max: { type: 'number' },
         poster_avatar: { type: 'string' },
+        api_key: { type: 'string', description: 'Participant API key' },
         negotiation_mode: { type: 'string', enum: ['multi_agent', 'single_agent'] },
         closing_rules: { type: 'object' },
       },
-      required: ['buyer_agent', 'title', 'price_min', 'price_max'], additionalProperties: false,
+      required: ['buyer_agent', 'title', 'price_min', 'price_max', 'api_key'], additionalProperties: false,
     },
   },
   {
@@ -289,8 +295,9 @@ const TOOLS = [
         agent_name: { type: 'string' },
         text: { type: 'string' },
         price: { type: 'number' },
+        api_key: { type: 'string', description: 'Participant API key' },
       },
-      required: ['post_id', 'role', 'text'], additionalProperties: false,
+      required: ['post_id', 'role', 'text', 'api_key'], additionalProperties: false,
     },
   },
   {
@@ -435,15 +442,17 @@ const RUNNERS = {
     return rest('/api/agents/register', { method: 'POST', body: args });
   },
   async offer_create(args) {
-    return rest('/api/board/offers', { method: 'POST', body: args });
+    const body = Object.assign({}, args); delete body.api_key;
+    return rest('/api/board/offers', { method: 'POST', body, headers: authHeaders(args.api_key) });
   },
   async want_create(args) {
-    return rest('/api/board/wants', { method: 'POST', body: args });
+    const body = Object.assign({}, args); delete body.api_key;
+    return rest('/api/board/wants', { method: 'POST', body, headers: authHeaders(args.api_key) });
   },
   async bid_post(args) {
     const body = { role: args.role, agent_name: args.agent_name, text: args.text };
     if (args.price !== undefined && args.price !== null) body.price = args.price;
-    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/messages', { method: 'POST', body });
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/messages', { method: 'POST', body, headers: authHeaders(args.api_key) });
   },
   async comment_vote(args) {
     return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/comments/' + encodeURIComponent(args.message_id) + '/vote', { method: 'POST', body: { direction: args.direction } });

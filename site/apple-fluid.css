@@ -159,3 +159,35 @@ body.apple-theme .nav-register{font-weight:600}
 .site-rail .rail-cta:hover{background:#1d1d1f;color:#fff!important}
 @media(max-width:980px){.rail-layout{grid-template-columns:1fr;gap:14px}.site-rail{position:static;display:grid;grid-template-columns:1fr 1fr;gap:8px}.site-rail .panel:first-child{grid-column:1/-1}}
 @media(max-width:560px){.site-rail{grid-template-columns:1fr}.site-rail .panel:first-child{grid-column:auto}}
+
+/* Apple control system: clear primary, secondary, and small controls. */
+body.apple-theme .btn,body.apple-theme button.btn,body.apple-theme .auth-btn,body.apple-theme .post-submit{
+  appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:42px;padding:9px 18px!important;border-radius:980px!important;
+  font-family:var(--apple-sans)!important;font-size:14px!important;font-weight:500!important;line-height:1!important;
+  letter-spacing:-.01em!important;cursor:pointer;text-decoration:none;transition:background .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+body.apple-theme .btn-primary,body.apple-theme button.btn-primary,body.apple-theme .auth-btn:not(.ghost),body.apple-theme .post-submit{
+  background:var(--apple-blue)!important;border:1px solid var(--apple-blue)!important;color:#fff!important;
+}
+body.apple-theme .btn-primary:hover,body.apple-theme .auth-btn:not(.ghost):hover,body.apple-theme .post-submit:hover{background:#0077ed!important;border-color:#0077ed!important}
+body.apple-theme .btn-ghost,body.apple-theme .auth-btn.ghost,body.apple-theme .btn-secondary{
+  background:var(--apple-soft)!important;border:1px solid var(--apple-soft)!important;color:var(--apple-ink)!important;
+}
+body.apple-theme .btn-ghost:hover,body.apple-theme .auth-btn.ghost:hover{background:#e8e8ed!important;border-color:#e8e8ed!important}
+body.apple-theme .btn:focus-visible,body.apple-theme .auth-btn:focus-visible,body.apple-theme .post-submit:focus-visible,body.apple-theme .nav-auth:focus-visible{
+  outline:3px solid rgba(0,113,227,.35);outline-offset:2px;
+}
+body.apple-theme .btn:disabled,body.apple-theme .auth-btn:disabled,body.apple-theme .post-submit:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+body.apple-theme .nav-auth{background:var(--apple-soft)!important;border:1px solid var(--apple-soft)!important;color:var(--apple-ink)!important;border-radius:980px!important;padding:8px 13px!important;font-size:11px!important;font-weight:500!important}
+body.apple-theme .nav-auth:hover{background:#e8e8ed!important;color:var(--apple-ink)!important}
+body.apple-theme .nav-register{background:var(--apple-blue)!important;border-color:var(--apple-blue)!important;color:#fff!important;font-weight:600!important}
+body.apple-theme .nav-register:hover{background:#0077ed!important;color:#fff!important}
+body.apple-theme .comment-accept{background:#e8f1fb!important;border:1px solid #b8d8f4!important;color:#0066cc!important;border-radius:980px!important;font-family:var(--apple-sans)!important;font-size:10px!important;padding:4px 10px!important}
+body.apple-theme .comment-votes button{border-radius:99px!important;background:var(--apple-soft)!important;color:#6e6e73!important;border:0!important;cursor:pointer}
+body.apple-theme .comment-votes button:hover{background:#e8e8ed!important;color:var(--apple-blue)!important}
+body.apple-theme .avatar-opt{border-radius:50%!important;border:1px solid var(--apple-hair)!important;background:#fff!important;cursor:pointer}
+body.apple-theme .avatar-opt.active{border-color:var(--apple-blue)!important;box-shadow:0 0 0 2px var(--apple-blue) inset!important}
+body.apple-theme .role-card{background:#fff!important;border:1px solid var(--apple-hair)!important;border-radius:16px!important;cursor:pointer}
+body.apple-theme .role-card.active{border-color:var(--apple-blue)!important;box-shadow:0 0 0 2px var(--apple-blue) inset!important}
+body.apple-theme .post-vote button{border:0!important;background:transparent!important;cursor:pointer}

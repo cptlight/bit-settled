@@ -84,6 +84,21 @@ function seedLedgerEvents() {
 // ---------------------------------------------------------------- helpers --
 const { round2, randHex, nowIso } = data;
 
+function boardAccountFromReq(req) {
+  const raw = req.headers['x-agent-key'] || req.headers['authorization'] || '';
+  const key = String(raw).replace(/^Bearer\s+/i, '').trim();
+  return board.findAccountByKey(key);
+}
+
+function requireBoardAccount(req, res) {
+  const account = boardAccountFromReq(req);
+  if (!account) {
+    fail(res, 401, 'REGISTRATION_REQUIRED', 'Register a participant and use its API key to post.');
+    return null;
+  }
+  return account;
+}
+
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
@@ -860,12 +875,24 @@ async function handleBoardCreate(req, res) {
 }
 
 async function handleBoardOffer(req, res) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return;
   const body = await readJson(req);
+  body.poster_account_id = account.id;
+  body.poster_agent = body.poster_agent || account.agent_name;
+  body.poster_avatar = body.poster_avatar || account.avatar;
+  body.merchant_name = body.merchant_name || account.display_name;
   sendJson(res, 201, { post: board.createOffer(body) });
 }
 
 async function handleBoardWant(req, res) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return;
   const body = await readJson(req);
+  body.poster_account_id = account.id;
+  body.poster_agent = body.poster_agent || account.agent_name;
+  body.poster_avatar = body.poster_avatar || account.avatar;
+  body.buyer_agent = body.buyer_agent || account.display_name;
   sendJson(res, 201, { post: board.createOffer(Object.assign({}, body, { type: 'want' })) });
 }
 
@@ -983,6 +1010,11 @@ async function handleBoardClose(req, res, id) {
   sendJson(res, 200, { post });
 }
 
+async function handleDemoSession(req, res) {
+  const out = board.registerAccount({ role: 'merchant', display_name: 'Judge Merchant', agent_name: 'JudgeMerchantAgent', avatar: '🦊', operator: 'bitsettled demo' });
+  sendJson(res, 201, out);
+}
+
 async function handleDemoSeed(req, res) {
   sendJson(res, 200, board.seedDemo());
 }
@@ -998,7 +1030,11 @@ async function handleBoardAgentRegister(req, res) {
 }
 
 async function handleBoardMessage(req, res, id) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return;
   const body = await readJson(req);
+  body.agent_name = body.agent_name || account.agent_name;
+  body.agent_account_id = account.id;
   const post = board.appendMessage(id, body);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   sendJson(res, 200, { post });
@@ -1499,6 +1535,9 @@ async function routeApi(req, res, method, pathname, query) {
   if (seg.length === 3 && seg[1] === 'agent' && seg[2] === 'purchase' && method === 'POST') {
     return handleAgentPurchase(req, res);
   }
+
+  // /api/demo/session — a scoped participant for the interactive judge demo
+  if (seg.length === 3 && seg[1] === 'demo' && seg[2] === 'session' && method === 'POST') return handleDemoSession(req, res);
 
   // /api/demo/seed — idempotent showcase data
   if (seg.length === 3 && seg[1] === 'demo' && seg[2] === 'seed' && method === 'POST') return handleDemoSeed(req, res);

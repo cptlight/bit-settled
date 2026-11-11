@@ -46,14 +46,25 @@
   }
   function load() { return S.api('/board/posts/' + encodeURIComponent(postId)).then(function (res) { state.post = res && res.post; if (!state.post) throw new Error('Item not found'); render(); }); }
   function voteComment(msg, dir) { S.api('/board/posts/' + encodeURIComponent(postId) + '/comments/' + encodeURIComponent(msg) + '/vote', { method: 'POST', body: { direction: dir } }).then(load).catch(function (err) { S.toast(err && err.message || 'Vote failed', 'err'); }); }
+  function account() {
+    try { var p = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null'); return p && p.api_key ? p : null; } catch (e) { return null; }
+  }
+  function requireAccount() {
+    if (account()) return true;
+    S.toast('Join the Exchange to bid or negotiate.', 'warn');
+    setTimeout(function () { location.href = 'register.html'; }, 500);
+    return false;
+  }
+
   function send() {
+    if (!requireAccount()) return;
     var text = ($('itemText') && $('itemText').value || '').trim();
     var price = $('itemPrice') && $('itemPrice').value ? Number($('itemPrice').value) : null;
     if (!text) { S.toast('Write a bid or comment.', 'warn'); return; }
     S.api('/board/posts/' + encodeURIComponent(postId) + '/messages', { method: 'POST', body: { role: $('itemRole').value, agent_name: ($('itemAgent').value || '').trim(), text: text, price: price } }).then(load).catch(function (err) { S.toast(err && err.message || 'Post failed', 'err'); });
   }
   function acceptBid(msg, price, agent) { S.api('/board/posts/' + encodeURIComponent(postId) + '/close', { method: 'POST', body: { price: price, buyer_agent: agent, close_reason: 'merchant accepted bid' } }).then(load).then(function () { S.toast('Merchant accepted the bid.', 'ok'); }).catch(function (err) { S.toast(err && err.message || 'Could not accept bid', 'err'); }); }
-  function simulate() { S.api('/board/posts/' + encodeURIComponent(postId) + '/simulate', { method: 'POST', body: { buyer_agent: 'NovaBuyer', merchant_agent: 'NovaMerchant', rounds: 4 } }).then(load).then(function () { S.toast('Autonomous session complete.', 'ok'); }).catch(function (err) { S.toast(err && err.message || 'Simulation failed', 'err'); }); }
+  function simulate() { if (!requireAccount()) return; S.api('/board/posts/' + encodeURIComponent(postId) + '/simulate', { method: 'POST', body: { buyer_agent: 'NovaBuyer', merchant_agent: 'NovaMerchant', rounds: 4 } }).then(load).then(function () { S.toast('Autonomous session complete.', 'ok'); }).catch(function (err) { S.toast(err && err.message || 'Simulation failed', 'err'); }); }
   if (!postId) { $('itemBody').innerHTML = '<div class="panel cat-empty">No item in this link. <a href="index.html">Back to the board.</a></div>'; return; }
   load().catch(function (err) { $('itemBody').innerHTML = '<div class="panel cat-empty">Could not load item: ' + esc(err && err.message || 'network error') + '. <a href="index.html">Back to the board.</a></div>'; });
 })();

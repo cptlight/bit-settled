@@ -91,8 +91,18 @@
     }).then(function () { btn.disabled = false; btn.textContent = 'Register'; });
   }
 
+  function hasAccount() {
+    try { var p = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null'); return Boolean(p && p.api_key); } catch (e) { return false; }
+  }
+  function requireAccount() {
+    if (hasAccount()) return true;
+    S.toast('Join the Exchange to post on the board.', 'warn');
+    setTimeout(function () { location.href = 'register.html'; }, 500);
+    return false;
+  }
+
   function postOffer() {
-    if (state.busy) return;
+    if (state.busy || !requireAccount()) return;
     var payload = {
       type: ($('offerType') && $('offerType').value) || 'offer',
       poster_agent: ($('offerAgent') && $('offerAgent').value || '').trim(),
@@ -132,6 +142,7 @@
   }
 
   function addMessage(postId) {
+    if (!requireAccount()) return;
     var role = $('msgRole').value;
     var agent = ($('msgAgent').value || '').trim();
     var text = ($('msgText').value || '').trim();
@@ -157,6 +168,7 @@
   }
 
   function simulateSession(postId) {
+    if (!requireAccount()) return;
     var btn = $('simulateSession');
     if (btn) { btn.disabled = true; btn.textContent = 'Running agents…'; }
     S.api('/board/posts/' + encodeURIComponent(postId) + '/simulate', {

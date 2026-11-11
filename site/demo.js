@@ -17,8 +17,16 @@
     log(label || (method + ' ' + path));
     return S.api(path, { method: method, body: body }).then(function (res) { return res; });
   }
+  async function ensureSession() {
+    try { var saved = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null'); if (saved && saved.api_key) return saved; } catch (e) {}
+    var res = await S.api('/demo/session', { method: 'POST', body: {} });
+    try { localStorage.setItem('bitsettled_participant', JSON.stringify({ participant: res.participant, api_key: res.api_key })); } catch (e) {}
+    return res;
+  }
+
   async function run(simulate) {
     if (state.busy) return;
+    await ensureSession();
     state.busy = true; resetSteps(); $('runDemo').disabled = true; if ($('runSim')) $('runSim').disabled = true; if ($('resetDemo')) $('resetDemo').disabled = true; $('runDemo').textContent = 'Running…'; $('demoLog').textContent = '';
     try {
       setStep(1, 'active');

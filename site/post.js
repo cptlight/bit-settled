@@ -3,6 +3,8 @@
   var S = window.Settled; if (!S) return;
   var $ = function (id) { return document.getElementById(id); };
   function submit() {
+    var session = null; try { session = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null'); } catch (e) {}
+    if (!session || !session.api_key) { S.toast('Join the Exchange before posting.', 'warn'); location.href = 'register.html'; return; }
     var type = $('postType').value;
     var name = ($('postName').value || '').trim();
     var agent = ($('postAgent').value || '').trim();

@@ -22,6 +22,10 @@
     options = options || {};
     var method = (options.method || 'GET').toUpperCase();
     var init = { method: method, headers: { accept: 'application/json' }, credentials: 'same-origin' };
+    try {
+      var saved = JSON.parse(localStorage.getItem('bitsettled_participant') || 'null');
+      if (saved && saved.api_key) init.headers['x-agent-key'] = saved.api_key;
+    } catch (e) {}
     if (options.body !== undefined) {
       init.headers['content-type'] = 'application/json';
       init.body = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
