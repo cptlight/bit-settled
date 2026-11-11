@@ -1071,7 +1071,15 @@ function handleInstance(req, res) {
 /** Seed-based federation discovery: this node + reachable peers (no central registry). */
 async function handleNetworkNodes(req, res, query) {
   const refresh = query.get('refresh') === '1' || query.get('refresh') === 'true';
-  const out = await network.nodes({ self: instance.info(paypal.mode()), refresh });
+  const gossip = query.get('gossip') !== '0';
+  const out = await network.nodes({ self: instance.info(paypal.mode()), refresh, gossip });
+  sendJson(res, 200, out);
+}
+
+/** Cross-node board feed: public posts from reachable direct peer nodes. */
+async function handleNetworkBoards(req, res, query) {
+  const refresh = query.get('refresh') === '1' || query.get('refresh') === 'true';
+  const out = await network.boards({ self: instance.info(paypal.mode()), refresh });
   sendJson(res, 200, out);
 }
 
@@ -1476,6 +1484,11 @@ async function routeApi(req, res, method, pathname, query) {
   // GET /api/network/nodes — self + peers discovered from NETWORK_SEEDS
   if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'nodes') {
     return handleNetworkNodes(req, res, query);
+  }
+
+  // GET /api/network/boards — public posts from reachable direct peer nodes
+  if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'boards') {
+    return handleNetworkBoards(req, res, query);
   }
 
   // /api/merchants ...

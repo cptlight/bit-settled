@@ -8,6 +8,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var base = window.SETTLED_API_BASE || '/api';
   var loading = false;
+  var boardsLoading = false;
+  var pendingBusy = 0;
   var refreshBtn = $('netRefresh');
 
   var SEEDS_TEMPLATE = 'NETWORK_ID=my-agent-market\n' +
@@ -340,11 +342,16 @@
     refreshBtn.textContent = busy ? 'Refreshing…' : 'Refresh network';
     refreshBtn.setAttribute('aria-busy', busy ? 'true' : 'false');
   }
+  function busyStart() { pendingBusy += 1; setBusy(true); }
+  function busyEnd() {
+    pendingBusy = Math.max(0, pendingBusy - 1);
+    if (!pendingBusy) setBusy(false);
+  }
 
   function load(force) {
     if (loading) return;
     loading = true;
-    setBusy(true);
+    busyStart();
     var path = '/network/nodes' + (force ? '?refresh=1' : '');
     request(path).then(function (res) {
       setError('');
@@ -361,12 +368,201 @@
       });
     }).then(function () {
       loading = false;
-      setBusy(false);
+      busyEnd();
+    });
+  }
+
+  /* ---------- cross-node offers: GET /api/network/boards ---------- */
+  function normalizeRange(range) {
+    if (!range) return null;
+    if (Array.isArray(range) && range.length >= 2) return { min: Number(range[0]), max: Number(range[1]) };
+    if (typeof range !== 'object') return null;
+    var lo = Number(range.min);
+    var hi = Number(range.max);
+    if (!isFinite(lo) && !isFinite(hi)) return null;
+    if (!isFinite(lo)) lo = hi;
+    if (!isFinite(hi)) hi = lo;
+    return { min: lo, max: hi };
+  }
+  function normalizeOffer(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var id = text(raw.id);
+    if (!id) return null;
+    var status = text(raw.status).toLowerCase().replace(/[^a-z_]/g, '');
+    var labels = {
+      open: 'Open', negotiating: 'Negotiating', deal: 'Deal', accepted: 'Accepted',
+      closed: 'Closed', no_deal: 'No deal', rejected: 'Rejected', error: 'Error'
+    };
+    return {
+      id: id,
+      title: text(raw.title) || 'Untitled offer',
+      category: text(raw.category),
+      range: normalizeRange(raw.published_range),
+      statusKey: status || 'open',
+      statusLabel: labels[status] || (status ? status.replace(/_/g, ' ') : 'Open'),
+      itemUrl: text(raw.item_url)
+    };
+  }
+  function normalizeBoardEntry(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var src = raw.node && typeof raw.node === 'object' ? raw.node : raw;
+    var postsRaw = Array.isArray(raw.posts) ? raw.posts : (Array.isArray(src.posts) ? src.posts : []);
+    return {
+      node: {
+        self: src.self === true,
+        name: text(src.name) || 'Unnamed node',
+        networkId: text(src.network_id),
+        publicUrl: safeUrl(src.public_url)
+      },
+      posts: postsRaw.map(normalizeOffer).filter(Boolean).slice(0, 10)
+    };
+  }
+  function buildBoardsModel(res) {
+    res = res && typeof res === 'object' ? res : {};
+    var raw = Array.isArray(res.nodes) ? res.nodes : (Array.isArray(res.boards) ? res.boards : []);
+    var entries = raw.map(normalizeBoardEntry).filter(function (e) { return e && e.posts.length; });
+    var offers = entries.reduce(function (n, e) { return n + e.posts.length; }, 0);
+    var unreachable = raw.filter(function (e) {
+      return e && (e.reachable === false || (e.node && e.node.reachable === false));
+    }).length;
+    var peersScanned = typeof res.count === 'number' && res.count >= 0 ? res.count : raw.length;
+    return {
+      entries: entries,
+      offers: offers,
+      nodes: entries.length,
+      peersScanned: peersScanned,
+      unreachable: unreachable,
+      totalPosts: typeof res.total_posts === 'number' ? res.total_posts : offers,
+      cached: res.cached === true
+    };
+  }
+  function money(n) {
+    if (S.money0) return S.money0(n);
+    var v = Number(n);
+    return isFinite(v) ? '$' + Math.round(v) : '—';
+  }
+  function rangeLabel(range) {
+    if (!range) return '';
+    if (!isFinite(range.min) || !isFinite(range.max)) return '';
+    return range.min === range.max ? money(range.min) : money(range.min) + '–' + money(range.max);
+  }
+  function resolveOfferUrl(node, offer) {
+    var absolute = safeUrl(offer.itemUrl);
+    if (absolute) return absolute;
+    var raw = text(offer.itemUrl);
+    var origin = node.publicUrl ? stripSlash(node.publicUrl) : (node.self ? originOf(node) : '');
+    if (raw && raw.charAt(0) === '/' && origin) return origin + raw;
+    if (origin) return origin + '/item.html?post=' + encodeURIComponent(offer.id);
+    return 'item.html?post=' + encodeURIComponent(offer.id);
+  }
+  function isRemoteUrl(url) {
+    if (!/^https?:\/\//i.test(url)) return false;
+    return !window.location || url.indexOf(window.location.origin) !== 0;
+  }
+  function offerRow(node, offer) {
+    var href = resolveOfferUrl(node, offer);
+    var meta = [];
+    if (offer.category) meta.push('<span class="net-offer-cat">' + esc(offer.category) + '</span>');
+    var range = rangeLabel(offer.range);
+    if (range) meta.push('<span class="net-offer-price">' + esc(range) + '</span>');
+    meta.push('<span class="net-offer-status ' + esc(offer.statusKey) + '">' + esc(offer.statusLabel) + '</span>');
+    var main = '<span class="net-offer-main"><span class="net-offer-title">' + esc(offer.title) + '</span>' +
+      '<span class="net-offer-meta">' + meta.join('') + '</span></span>';
+    if (!href) return '<div class="net-offer">' + main + '</div>';
+    var remote = isRemoteUrl(href);
+    return '<a class="net-offer" href="' + esc(href) + '"' + (remote ? ' target="_blank" rel="noopener"' : '') + '>' +
+      main + '<span class="net-offer-arrow" aria-hidden="true">↗</span></a>';
+  }
+  function boardEntryHtml(entry) {
+    var node = entry.node;
+    var meta = 'Network <b>' + (node.networkId ? esc(node.networkId) : '—') + '</b>';
+    if (node.publicUrl) {
+      meta += ' · <a href="' + esc(node.publicUrl) + '" target="_blank" rel="noopener">' +
+        esc(stripSlash(node.publicUrl).replace(/^https?:\/\//i, '')) + '</a>';
+    }
+    var badgeLabel = node.self ? 'This node' : entry.posts.length + ' offer' + (entry.posts.length === 1 ? '' : 's');
+    return '<section class="panel net-offer-node">' +
+      '<div class="net-offer-node-head">' +
+        '<div class="net-offer-node-id">' +
+          '<h3 class="net-offer-node-name">' + esc(node.name) + '</h3>' +
+          '<div class="net-offer-node-meta">' + meta + '</div>' +
+        '</div>' +
+        '<span class="net-badge">' + esc(badgeLabel) + '</span>' +
+      '</div>' +
+      '<div class="net-offer-list">' + entry.posts.map(function (o) { return offerRow(node, o); }).join('') + '</div>' +
+    '</section>';
+  }
+  function wireOffersRetry() {
+    var retry = $('netOffersRetry');
+    if (retry) retry.addEventListener('click', function () { loadBoards(true); });
+  }
+  function renderBoards(state) {
+    var host = $('netOffers');
+    var count = $('netOffersCount');
+    if (!host) return;
+    if (state.status === 'error') {
+      if (count) count.textContent = 'Unavailable';
+      host.innerHTML = '<div class="net-offers-error"><div><b>Couldn’t load cross-node offers.</b> ' +
+        (state.notFound
+          ? 'This node does not expose <code>GET /api/network/boards</code> yet.'
+          : esc(state.message || 'The network API did not respond.')) +
+        '<br><span class="net-muted">The rest of the network page still works.</span></div>' +
+        '<button class="btn btn-ghost btn-sm" id="netOffersRetry" type="button">Retry</button></div>';
+      wireOffersRetry();
+      return;
+    }
+    var model = state.model;
+    if (!model.entries.length) {
+      if (count) count.textContent = 'None yet';
+      var peerNote;
+      if (model.unreachable) {
+        peerNote = model.unreachable + ' peer board' + (model.unreachable === 1 ? '' : 's') +
+          ' could not be reached. Post an item here, or refresh later.';
+      } else if (model.peersScanned) {
+        peerNote = 'Reached ' + model.peersScanned + ' peer board' + (model.peersScanned === 1 ? '' : 's') +
+          ' — none had live offers. Post an item here, or refresh later.';
+      } else {
+        peerNote = 'No reachable peer boards are configured on this node. Post an item here, or add <code>NETWORK_SEEDS</code> so this node can follow other boards.';
+      }
+      host.innerHTML = '<div class="panel net-empty" style="grid-column:1/-1">' +
+        '<div class="net-empty-title">No active offers across the network yet</div>' +
+        '<p>' + peerNote + '</p>' +
+        '<div class="net-card-foot">' +
+          '<a class="btn btn-ghost btn-sm" href="post.html">Post an item</a>' +
+          '<a class="btn btn-ghost btn-sm" href="index.html">Open the board</a>' +
+          '<button class="btn btn-ghost btn-sm" id="netOffersRetry" type="button">Refresh offers</button>' +
+        '</div></div>';
+      wireOffersRetry();
+      return;
+    }
+    if (count) {
+      count.textContent = model.offers + ' offer' + (model.offers === 1 ? '' : 's') +
+        ' · ' + model.peersScanned + ' peer' + (model.peersScanned === 1 ? '' : 's') +
+        (model.unreachable ? ' · ' + model.unreachable + ' unreachable' : '');
+    }
+    host.innerHTML = model.entries.map(boardEntryHtml).join('');
+  }
+  function loadBoards(force) {
+    if (boardsLoading) return;
+    boardsLoading = true;
+    busyStart();
+    var path = '/network/boards' + (force ? '?refresh=1' : '');
+    request(path).then(function (res) {
+      renderBoards({ status: 'ok', model: buildBoardsModel(res) });
+    }).catch(function (err) {
+      renderBoards({
+        status: 'error',
+        notFound: err && err.status === 404,
+        message: (err && err.message) || 'The network API did not respond.'
+      });
+    }).then(function () {
+      boardsLoading = false;
+      busyEnd();
     });
   }
 
   /* ---------- wiring ---------- */
-  if (refreshBtn) refreshBtn.addEventListener('click', function () { load(true); });
+  if (refreshBtn) refreshBtn.addEventListener('click', function () { load(true); loadBoards(true); });
   document.addEventListener('click', function (e) {
     var target = e.target;
     var btn = target && target.closest ? target.closest('#netCopySeeds, #netEmptyCopy') : null;
@@ -376,4 +572,5 @@
   });
 
   load(false);
+  loadBoards(false);
 })();

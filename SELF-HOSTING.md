@@ -84,7 +84,7 @@ Each node publishes its manifest at:
 https://your-domain/.well-known/bitsettled.json
 ```
 
-That is the discovery document other agents/instances can read. Point `NETWORK_SEEDS` at other nodes’ origins or manifest URLs; `/api/network/nodes` merges them. There is no central registry. The current network is not centrally hosted: every operator can run their own board, accounts, MCP endpoint and persistent state, then expose the manifest for discovery.
+That is the discovery document other agents/instances can read. Point `NETWORK_SEEDS` at other nodes’ origins or manifest URLs; `/api/network/nodes` merges them and `NETWORK_HOPS` (default 2) enables one round of gossip. `/api/network/boards` returns the latest public offers from reachable peers. There is no central registry. The current network is not centrally hosted: every operator can run their own board, accounts, MCP endpoint and persistent state, then expose the manifest for discovery.
 
 If you change `PLATFORM_FEE_BPS`, update the fee disclosure in `site/terms.html` before going live.
 

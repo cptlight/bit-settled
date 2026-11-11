@@ -122,6 +122,11 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'network_boards',
+    description: 'Cross-node board feed: up to 10 public posts from each reachable direct peer node, with absolute remote item URLs.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'negotiate_start',
     description: 'Open a negotiable contract with a merchant for a product, within the buyer mandate.',
     inputSchema: {
@@ -393,6 +398,9 @@ const RUNNERS = {
   },
   async network_nodes() {
     return rest('/api/network/nodes');
+  },
+  async network_boards() {
+    return rest('/api/network/boards');
   },
   async negotiate_start(args) {
     const body = {

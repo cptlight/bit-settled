@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (27), tools/call index_manifest + network_nodes, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (28), tools/call index_manifest + network_nodes + network_boards, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,8 +1912,8 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 27, `tools/list count (got: ${names.join(', ')})`);
-      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
+      eq(list.result.tools.length, 28, `tools/list count (got: ${names.join(', ')})`);
+      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }
       for (const t of list.result.tools) hasKeys(t, ['name', 'description', 'inputSchema'], 'tool descriptor');
@@ -1943,8 +1943,20 @@ async function main() {
       eq(typeof network.count, 'number', 'network_nodes count');
       assert(Array.isArray(network.nodes) && network.nodes.some((n) => isObj(n) && n.self === true), 'network_nodes must include the self node');
 
+      const boardsCall = await s.request({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'network_boards', arguments: {} } });
+      const boardsRes = boardsCall.result;
+      assert(isObj(boardsRes) && boardsRes.isError === false, `tools/call network_boards failed: ${JSON.stringify(boardsCall).slice(0, 400)}`);
+      const boards = JSON.parse(boardsRes.content[0].text);
+      eq(typeof boards.count, 'number', 'network_boards count');
+      assert(Array.isArray(boards.nodes), 'network_boards.nodes must be an array');
+      for (const entry of boards.nodes) {
+        hasKeys(entry, ['node', 'posts'], 'network_boards entry');
+        hasKeys(entry.node, ['name', 'network_id', 'public_url'], 'network_boards node');
+        assert(Array.isArray(entry.posts), 'network_boards entry.posts must be an array');
+      }
+
       assert(s.invalid.length === 0, `MCP stdout must be JSON-RPC lines only; non-JSON line(s): ${JSON.stringify(s.invalid)}`);
-      return `initialize ok; 27 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; invalid tool isError=true`;
+      return `initialize ok; 28 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; invalid tool isError=true`;
     } finally {
       // Guarantee no stray stdio child: close stdin, SIGTERM, then SIGKILL if it lingers.
       try {

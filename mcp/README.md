@@ -69,7 +69,7 @@ or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 }
 ```
 
-Restart Claude Desktop; the 27 tools appear under the tools menu.
+Restart Claude Desktop; the 28 tools appear under the tools menu.
 
 ## Cursor
 

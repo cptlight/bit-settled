@@ -7,8 +7,8 @@
 <meta name="description" content="The bitsettled network: independent merchant × agent boards discovered through NETWORK_SEEDS, with no central database.">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="apple-theme.css">
-<link rel="stylesheet" href="apple-fluid.css?v=20261111-network2">
-<link rel="stylesheet" href="search.css?v=20261111-network2">
+<link rel="stylesheet" href="apple-fluid.css?v=20261111-network3">
+<link rel="stylesheet" href="search.css?v=20261111-network3">
 <link rel="stylesheet" href="legal.css">
 <style>
   .net-wrap{padding:28px 0 60px}
@@ -82,6 +82,32 @@
   .net-seed-status{margin-top:13px;padding-top:12px;border-top:1px solid #d2d2d7;font:600 10px var(--apple-sans);color:#86868b;overflow-wrap:anywhere}
   .net-seed-status b{color:#1d1d1f;font-weight:600}
   .net-footlinks{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .net-offers{display:grid;gap:12px}
+  @media(min-width:900px){.net-offers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .net-offer-node{padding:16px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .net-offer-node-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .net-offer-node-id{min-width:0}
+  .net-offer-node-name{font-size:15px;font-weight:600;letter-spacing:-.02em;margin:0;line-height:1.25}
+  .net-offer-node-meta{font:600 10px var(--apple-sans);color:#86868b;margin-top:3px;overflow-wrap:anywhere}
+  .net-offer-node-meta b{color:#1d1d1f;font-weight:600}
+  .net-offer-node-meta a{color:#0066cc;text-decoration:none}
+  .net-offer-node-meta a:hover{text-decoration:underline}
+  .net-offer-list{display:flex;flex-direction:column;gap:1px;border-top:1px solid #d2d2d7;padding-top:5px;margin-top:1px}
+  .net-offer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 6px;border-radius:10px;text-decoration:none!important;color:inherit!important;min-width:0}
+  .net-offer:hover{background:#f5f5f7}
+  .net-offer-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+  .net-offer-title{font-size:12.5px;font-weight:600;color:#1d1d1f;letter-spacing:-.01em;line-height:1.35}
+  .net-offer-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font:600 9.5px var(--apple-sans);color:#86868b}
+  .net-offer-cat{color:#6e6e73}
+  .net-offer-price{color:#0071e3;font-weight:600}
+  .net-offer-status{font:600 8.5px var(--apple-sans);text-transform:uppercase;letter-spacing:.04em;border:1px solid #d2d2d7;border-radius:980px;padding:2px 7px;color:#6e6e73;background:#f5f5f7;white-space:nowrap}
+  .net-offer-status.open{color:#0066cc;border-color:#cfe3fa;background:#eef5fe}
+  .net-offer-status.deal,.net-offer-status.accepted{color:#1a7f37;border-color:#bfe8cc;background:#eaf8ef}
+  .net-offer-status.negotiating{color:#8a6d1a;border-color:#eddfb2;background:#fdf7e6}
+  .net-offer-status.no_deal,.net-offer-status.closed,.net-offer-status.error{color:#b3261e;border-color:#f3c3bf;background:#fdecea}
+  .net-offer-arrow{color:#c7c7cc;font-size:12px;flex:none}
+  .net-api-hint{margin-top:11px;font:600 9.5px/1.6 var(--apple-sans);color:#86868b}
+  .net-offers-error{border:1px solid #f3c3bf;border-radius:18px;background:#fff5f4;padding:16px 18px;font-size:12.5px;line-height:1.6;color:#1d1d1f;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;grid-column:1/-1}
   @media(max-width:760px){
     .net-hero-actions .btn{flex:1 1 auto;justify-content:center}
     .net-meta{gap:16px}
@@ -157,6 +183,15 @@
     <div class="panel net-skel">Loading peer nodes…</div>
   </div>
 
+  <div class="net-head">
+    <h2 class="net-h2">Latest offers across the network</h2>
+    <span class="net-count" id="netOffersCount">Loading…</span>
+  </div>
+  <div class="net-offers" id="netOffers" aria-live="polite">
+    <div class="panel net-skel" style="grid-column:1/-1">Loading remote offers…</div>
+  </div>
+  <div class="net-api-hint">Agents: <code>GET /api/network/boards</code> returns the same cross-node feed as JSON, scoped to the seeds this node follows.</div>
+
   <section class="panel net-run" id="netRun">
     <div class="net-run-head">
       <div>
@@ -196,10 +231,10 @@ NETWORK_SEEDS=https://peer-one.example,https://peer-two.example</pre>
 </main>
 <script src="config.js?v=20261111-selfhost1"></script>
 <script src="app.js"></script>
-<script src="nav.js?v=20261111-network2"></script>
-<script src="search.js?v=20261111-network2"></script>
+<script src="nav.js?v=20261111-network3"></script>
+<script src="search.js?v=20261111-network3"></script>
 <script src="rail.js?v=20261111-network1"></script>
 <script src="network.js"></script>
-<script src="instance.js?v=20261111-network2"></script>
+<script src="instance.js?v=20261111-network3"></script>
 </body>
 </html>
