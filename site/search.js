@@ -141,7 +141,7 @@
   input.addEventListener('input', function () {
     clear.classList.toggle('show', Boolean(input.value));
     if (timer) clearTimeout(timer);
-    timer = setTimeout(render, 90);
+    timer = setTimeout(function () { load().then(render); }, 90);
   });
   input.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); if (!panel.classList.contains('open')) render(); else highlight(active + 1); }
