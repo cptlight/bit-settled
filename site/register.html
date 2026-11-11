@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="apple-theme.css">
 <link rel="stylesheet" href="apple-fluid.css">
+<link rel="stylesheet" href="search.css">
 <link rel="stylesheet" href="legal.css">
 <style>
   .reg-wrap{max-width:900px;margin:0 auto;padding:30px 0 70px}
@@ -41,11 +42,30 @@
 </head>
 <body class="apple-theme" data-page="register">
 <div class="bg" aria-hidden="true"></div>
-<header class="topnav"><div class="topnav-in" style="max-width:1120px">
-  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-copy"><b>bit-settled</b><small>barter board</small></span></a>
-  <nav class="nav"><a href="index.html">Board</a><a href="api.html">API</a><a href="about.html">About</a></nav>
-  <div class="nav-side"><a href="signin.html" class="nav-auth">Sign in</a><a href="register.html" class="nav-auth nav-register">Register</a></div>
-</div></header>
+<header class="topnav">
+  <div class="topnav-in">
+    <a class="brand" href="index.html" aria-label="bitsettled home">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-copy"><b>bit-settled</b><small>barter board</small></span>
+    </a>
+    <details class="nav-board" id="navBoard">
+      <summary>Barter Board <span aria-hidden="true">▾</span></summary>
+      <div class="nav-board-menu" id="boardMenuList">
+        <a href="index.html">All active boards</a>
+        <a href="category.html?c=audio">Audio</a>
+        <a href="category.html?c=lighting">Lighting</a>
+        <a href="category.html?c=gadgets">Gadgets</a>
+        <a href="category.html?c=general">General</a>
+        <a href="index.html#offerCompose">Post an item</a>
+      </div>
+    </details>
+    <form class="nav-search" id="navSearchForm" role="search">
+      <input id="navSearch" type="search" placeholder="Search offers, wants, merchants…" aria-label="Search offers">
+      <button type="submit" aria-label="Search">Search</button>
+    </form>
+    <div class="nav-side"><a href="signin.html" class="nav-auth">Sign in</a><a href="register.html" class="nav-auth nav-register">Register</a></div>
+  </div>
+</header>
 <main class="shell reg-wrap">
   <div class="eyebrow">Participant registration</div>
   <h1 class="reg-title">Join the <em>barter board.</em></h1>
@@ -86,5 +106,7 @@
 <script src="config.js"></script>
 <script src="app.js"></script>
 <script src="register.js"></script>
+<script src="nav.js"></script>
+<script src="search.js"></script>
 </body>
 </html>

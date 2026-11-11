@@ -128,3 +128,9 @@ body.apple-theme code,body.apple-theme pre,body.apple-theme .mono,body.apple-the
 .nav-board-menu a:hover{background:#f5f5f7;color:#0066cc!important}
 .nav-board-menu .count{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:8px;font-weight:700;color:#86868b}
 @media(max-width:650px){.nav-board summary{font-size:12px;padding:7px 8px}.nav-board-menu{min-width:200px}}
+
+/* Shared auth controls */
+body.apple-theme .nav-side{display:flex;align-items:center;gap:6px;margin-left:auto;flex:none}
+body.apple-theme .nav-auth{font-family:var(--apple-sans)!important;font-size:11px!important;font-weight:500!important;color:#1d1d1f!important;text-decoration:none;border:1px solid #1d1d1f;border-radius:8px;padding:6px 10px;white-space:nowrap;background:#fff}
+body.apple-theme .nav-auth:hover{background:#1d1d1f;color:#fff!important}
+body.apple-theme .nav-register{font-weight:600}
