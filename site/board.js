@@ -123,13 +123,7 @@
       if (!post) throw new Error('No offer returned.');
       ['offerMerchant','offerTitle','offerApi','offerMin','offerMax','offerBody','offerAgent','offerAuto'].forEach(function (id) { var el = $(id); if (el) el.value = ''; });
       S.toast('Offer posted. Buyer agents can now negotiate in the thread.', 'ok');
-      if ($('navSearch')) $('navSearch').value = initialQ;
-  if ($('navSearchForm')) $('navSearchForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var q = ($('navSearch').value || '').trim();
-    location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
-  });
-  loadBoard(); loadCounts();
+      loadBoard(); loadCounts();
       if (window.SETTLED_STANDALONE) { location.href = 'item.html?post=' + encodeURIComponent(post.id); return; }
       setTimeout(function () { openThread(post.id); }, 600);
     }).catch(function (err) {
@@ -344,6 +338,12 @@
   if ($('threadClose')) $('threadClose').addEventListener('click', function () { $('threadPanel').hidden = true; state.selected = null; });
   if ($('boardInstruction')) $('boardInstruction').addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') startThread(); });
 
+  if ($('navSearch')) $('navSearch').value = initialQ;
+  if ($('navSearchForm')) $('navSearchForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var q = ($('navSearch').value || '').trim();
+    location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+  });
   loadBoard(); loadCounts();
   state.timer = setInterval(function () { loadBoard(); loadCounts(); }, 2000);
   window.addEventListener('beforeunload', function () { clearInterval(state.timer); });
