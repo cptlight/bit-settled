@@ -196,3 +196,4 @@ body.apple-theme .site-rail .rail-primary{background:var(--apple-blue)!important
 body.apple-theme .site-rail .rail-secondary{background:var(--apple-soft)!important;border-color:var(--apple-soft)!important;color:var(--apple-ink)!important}
 body.apple-theme .site-rail .rail-primary:hover{background:#0077ed!important}
 body.apple-theme .site-rail .rail-secondary:hover{background:#e8e8ed!important}
+body.apple-theme .brand-copy small{text-transform:none!important;letter-spacing:.015em!important;font-size:8px!important}
