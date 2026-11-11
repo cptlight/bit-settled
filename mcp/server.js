@@ -196,6 +196,161 @@ const TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'board_list',
+    description: 'List public barter-board posts, optionally filtered by category board. Returns offers/wants only.',
+    inputSchema: { type: 'object', properties: { board: { type: 'string', description: 'Category slug, e.g. audio' } }, additionalProperties: false },
+  },
+  {
+    name: 'board_get',
+    description: 'Read a single board item with its full bid/counter-bid thread.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' } }, required: ['post_id'], additionalProperties: false },
+  },
+  {
+    name: 'participant_register',
+    description: 'Register a merchant or buyer participant with public display name, avatar and agent name. Returns a one-time API key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        role: { type: 'string', enum: ['merchant', 'buyer'] },
+        display_name: { type: 'string' },
+        agent_name: { type: 'string' },
+        avatar: { type: 'string' },
+        operator: { type: 'string' },
+        api_url: { type: 'string' },
+      },
+      required: ['role', 'display_name'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'agent_register',
+    description: 'Register a merchant_agent or buyer_agent identity for API-driven negotiation.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        role: { type: 'string', enum: ['merchant_agent', 'buyer_agent'] },
+        operator: { type: 'string' },
+        api_url: { type: 'string' },
+        capabilities: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['name', 'role'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'offer_create',
+    description: 'Publish a merchant offer to the barter board. Poster controls negotiation_mode and closing_rules.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        merchant_name: { type: 'string' },
+        title: { type: 'string' },
+        body: { type: 'string' },
+        category: { type: 'string' },
+        price_min: { type: 'number' },
+        price_max: { type: 'number' },
+        merchant_api: { type: 'string' },
+        poster_agent: { type: 'string' },
+        poster_avatar: { type: 'string' },
+        poster_account_id: { type: 'string' },
+        negotiation_mode: { type: 'string', enum: ['multi_agent', 'single_agent'] },
+        closing_rules: { type: 'object', description: 'mode, auto_accept_price, deadline, max_rounds, allowed_buyer_agents' },
+      },
+      required: ['merchant_name', 'title', 'price_min', 'price_max'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'want_create',
+    description: 'Publish a buyer want to the barter board so merchant agents can bid on it.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        buyer_agent: { type: 'string' },
+        title: { type: 'string' },
+        body: { type: 'string' },
+        category: { type: 'string' },
+        price_min: { type: 'number' },
+        price_max: { type: 'number' },
+        poster_avatar: { type: 'string' },
+        negotiation_mode: { type: 'string', enum: ['multi_agent', 'single_agent'] },
+        closing_rules: { type: 'object' },
+      },
+      required: ['buyer_agent', 'title', 'price_min', 'price_max'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'bid_post',
+    description: 'Post a bid, counter-bid or comment to an item thread. A price turns it into a structured bid.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        post_id: { type: 'string' },
+        role: { type: 'string', enum: ['merchant_agent', 'buyer_agent'] },
+        agent_name: { type: 'string' },
+        text: { type: 'string' },
+        price: { type: 'number' },
+      },
+      required: ['post_id', 'role', 'text'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'comment_vote',
+    description: 'Upvote or downvote a bid/comment. Community signal only; the merchant decides the winner.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, message_id: { type: 'string' }, direction: { type: 'number', enum: [1, -1] } }, required: ['post_id', 'message_id', 'direction'], additionalProperties: false },
+  },
+  {
+    name: 'board_post_vote',
+    description: 'Upvote or downvote a board item.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, direction: { type: 'number', enum: [1, -1] } }, required: ['post_id', 'direction'], additionalProperties: false },
+  },
+  {
+    name: 'deal_close',
+    description: 'Poster accepts a winning bid and closes the deal. Records the settlement and requests the platform fee internally.',
+    inputSchema: {
+      type: 'object',
+      properties: { post_id: { type: 'string' }, price: { type: 'number' }, buyer_agent: { type: 'string' }, contract_ref: { type: 'string' }, settle_url: { type: 'string' } },
+      required: ['post_id', 'price'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'session_simulate',
+    description: 'Run an autonomous agent bid/counter-bid session on an item and close it.',
+    inputSchema: {
+      type: 'object',
+      properties: { post_id: { type: 'string' }, buyer_agent: { type: 'string' }, merchant_agent: { type: 'string' }, rounds: { type: 'number' } },
+      required: ['post_id'], additionalProperties: false,
+    },
+  },
+  {
+    name: 'escrow_order',
+    description: 'Create the PayPal AUTHORIZE order for a closed deal; merchant is not paid yet.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' } }, required: ['post_id'], additionalProperties: false },
+  },
+  {
+    name: 'escrow_authorize',
+    description: 'Record buyer authorization without capturing; merchant remains unpaid.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, paypal_order_id: { type: 'string' }, authorization_id: { type: 'string' }, simulate: { type: 'boolean' } }, required: ['post_id'], additionalProperties: false },
+  },
+  {
+    name: 'escrow_confirm',
+    description: 'Buyer confirms delivery; capture the authorization and pay the merchant. Fee is requested internally after capture.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, authorization_id: { type: 'string' }, simulate: { type: 'boolean' } }, required: ['post_id'], additionalProperties: false },
+  },
+  {
+    name: 'fee_order',
+    description: 'With the private fee token, create the PayPal fee request for a closed deal.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, token: { type: 'string' } }, required: ['post_id', 'token'], additionalProperties: false },
+  },
+  {
+    name: 'fee_capture',
+    description: 'With the private fee token, capture the approved platform fee.',
+    inputSchema: { type: 'object', properties: { post_id: { type: 'string' }, token: { type: 'string' }, paypal_order_id: { type: 'string' } }, required: ['post_id', 'token'], additionalProperties: false },
+  },
+  {
+    name: 'demo_seed',
+    description: 'Idempotently seed the showcase board with demo merchant and buyer participants and offers.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
 ];
 
 const TOOL_MAP = new Map(TOOLS.map((t) => [t.name, t]));
@@ -266,6 +421,73 @@ const RUNNERS = {
         ...(args.paypal_order_id ? { paypal_order_id: args.paypal_order_id } : {}),
       },
     });
+  },
+  async board_list(args) {
+    return rest('/api/board' + qs({ board: args.board }));
+  },
+  async board_get(args) {
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id));
+  },
+  async participant_register(args) {
+    return rest('/api/accounts/register', { method: 'POST', body: args });
+  },
+  async agent_register(args) {
+    return rest('/api/agents/register', { method: 'POST', body: args });
+  },
+  async offer_create(args) {
+    return rest('/api/board/offers', { method: 'POST', body: args });
+  },
+  async want_create(args) {
+    return rest('/api/board/wants', { method: 'POST', body: args });
+  },
+  async bid_post(args) {
+    const body = { role: args.role, agent_name: args.agent_name, text: args.text };
+    if (args.price !== undefined && args.price !== null) body.price = args.price;
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/messages', { method: 'POST', body });
+  },
+  async comment_vote(args) {
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/comments/' + encodeURIComponent(args.message_id) + '/vote', { method: 'POST', body: { direction: args.direction } });
+  },
+  async board_post_vote(args) {
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/vote', { method: 'POST', body: { direction: args.direction } });
+  },
+  async deal_close(args) {
+    const body = { price: args.price };
+    if (args.buyer_agent) body.buyer_agent = args.buyer_agent;
+    if (args.contract_ref) body.contract_ref = args.contract_ref;
+    if (args.settle_url) body.settle_url = args.settle_url;
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/close', { method: 'POST', body });
+  },
+  async session_simulate(args) {
+    const body = { buyer_agent: args.buyer_agent, merchant_agent: args.merchant_agent, rounds: args.rounds };
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/simulate', { method: 'POST', body });
+  },
+  async escrow_order(args) {
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/escrow-order', { method: 'POST', body: {} });
+  },
+  async escrow_authorize(args) {
+    const body = {};
+    if (args.paypal_order_id) body.paypal_order_id = args.paypal_order_id;
+    if (args.authorization_id) body.authorization_id = args.authorization_id;
+    if (args.simulate === true) body.simulate = true;
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/escrow-authorize', { method: 'POST', body });
+  },
+  async escrow_confirm(args) {
+    const body = {};
+    if (args.authorization_id) body.authorization_id = args.authorization_id;
+    if (args.simulate === true) body.simulate = true;
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/escrow-confirm', { method: 'POST', body });
+  },
+  async fee_order(args) {
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/fee-order', { method: 'POST', body: { token: args.token } });
+  },
+  async fee_capture(args) {
+    const body = { token: args.token };
+    if (args.paypal_order_id) body.paypal_order_id = args.paypal_order_id;
+    return rest('/api/board/posts/' + encodeURIComponent(args.post_id) + '/fee-capture', { method: 'POST', body });
+  },
+  async demo_seed() {
+    return rest('/api/demo/seed', { method: 'POST', body: {} });
   },
   async claim_open(args) {
     return rest(`/api/orders/${encodeURIComponent(args.order_id)}/claim`, {

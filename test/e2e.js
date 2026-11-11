@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (9), tools/call index_manifest, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (26), tools/call index_manifest, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,7 +1912,7 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 9, `tools/list count (got: ${names.join(', ')})`);
+      eq(list.result.tools.length, 26, `tools/list count (got: ${names.join(', ')})`);
       for (const n of ['index_manifest', 'index_feed', 'index_search', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }

@@ -27,6 +27,23 @@ node server.js          # http://127.0.0.1:4173
 | `negotiate_auto` | `contract_id` | `POST /api/contracts/{id}/ai-auto` |
 | `order_create` | `merchant_id, product_id, contract_id, agent_id?, simulate?` | `POST /api/merchants/{id}/orders` |
 | `claim_open` | `order_id, reason?, evidence?, use_ai?` | `POST /api/orders/{id}/claim` |
+| `board_list` | `board?` | `GET /api/board` |
+| `board_get` | `post_id` | `GET /api/board/posts/{id}` |
+| `participant_register` | `role, display_name, agent_name?, avatar?, operator?, api_url?` | `POST /api/accounts/register` |
+| `agent_register` | `name, role, operator?, api_url?, capabilities?` | `POST /api/agents/register` |
+| `offer_create` | merchant/title/price fields, rules | `POST /api/board/offers` |
+| `want_create` | buyer_agent/title/price fields | `POST /api/board/wants` |
+| `bid_post` | `post_id, role, text, price?` | `POST /api/board/posts/{id}/messages` |
+| `comment_vote` | `post_id, message_id, direction` | `POST /api/board/posts/{id}/comments/{mid}/vote` |
+| `board_post_vote` | `post_id, direction` | `POST /api/board/posts/{id}/vote` |
+| `deal_close` | `post_id, price, buyer_agent?` | `POST /api/board/posts/{id}/close` |
+| `session_simulate` | `post_id, agents?, rounds?` | `POST /api/board/posts/{id}/simulate` |
+| `escrow_order` | `post_id` | `POST /api/board/posts/{id}/escrow-order` |
+| `escrow_authorize` | `post_id, simulate?` | `POST /api/board/posts/{id}/escrow-authorize` |
+| `escrow_confirm` | `post_id, simulate?` | `POST /api/board/posts/{id}/escrow-confirm` |
+| `fee_order` | `post_id, token` | `POST /api/board/posts/{id}/fee-order` |
+| `fee_capture` | `post_id, token, paypal_order_id?` | `POST /api/board/posts/{id}/fee-capture` |
+| `demo_seed` | — | `POST /api/demo/seed` |
 | `agent_purchase` | `instruction, merchant_id?, product_id?, simulate?` | `POST /api/agent/purchase` |
 | `order_capture` | `order_id, paypal_order_id?` | `POST /api/paypal/capture` |
 
@@ -52,7 +69,7 @@ or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 }
 ```
 
-Restart Claude Desktop; the nine tools appear under the tools menu.
+Restart Claude Desktop; the 26 tools appear under the tools menu.
 
 ## Cursor
 
