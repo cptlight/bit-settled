@@ -4,8 +4,10 @@
   var S = window.Settled;
   var $ = function (id) { return document.getElementById(id); };
   if (!S) return;
-  var postId = new URLSearchParams(location.search).get('post') || '';
-  var state = { post: null, feeOrderId: null, approvalUrl: null, clientId: null, busy: false, sdk: null };
+  var params = new URLSearchParams(location.search);
+  var postId = params.get('post') || '';
+  var feeToken = params.get('token') || '';
+  var state = { post: null, feeOrderId: null, approvalUrl: null, clientId: null, busy: false, sdk: null, fee: null };
 
   function esc(v) { return S.esc(v); }
   function money(v) { return S.money(v); }
@@ -15,12 +17,11 @@
   function render() {
     var p = state.post || {};
     $('feeFacts').innerHTML = fact('deal', p.title) + fact('agreed price', money(p.agreed_price)) +
-      fact('platform fee · 0.5%', money(p.platform_fee)) + fact('fee status', p.fee_collected ? 'paid' : 'due') +
-      fact('contract', p.contract_ref || '—') + fact('merchant', p.merchant && p.merchant.name);
-    if (p.fee_collected) {
+      fact('settlement request', money(state.fee)) + fact('contract', p.contract_ref || '—') + fact('merchant', p.merchant && p.merchant.name);
+    if (state.paid) {
       $('paypalFeeHost').innerHTML = '';
       $('feeActions').innerHTML = '<a class="btn btn-primary" href="index.html">Back to board</a>';
-      $('feeNote').textContent = 'Paid via PayPal. Capture id: ' + (p.fee_capture_id || '—') + '.';
+      $('feeNote').textContent = 'Paid via PayPal.';
       return;
     }
     $('feeActions').innerHTML = state.approvalUrl ? '<a class="btn btn-ghost" href="' + esc(state.approvalUrl) + '" target="_blank" rel="noopener noreferrer">Open PayPal approval</a>' : '';
@@ -63,11 +64,11 @@
     if (state.busy) return;
     state.busy = true;
     return S.api('/board/posts/' + encodeURIComponent(postId) + '/fee-capture', {
-      method: 'POST', body: { paypal_order_id: paypalOrderId, order_id: state.feeOrderId }
+      method: 'POST', body: { paypal_order_id: paypalOrderId, order_id: state.feeOrderId, token: feeToken }
     }).then(function (res) {
-      state.post = res && res.post ? res.post : state.post;
+      state.paid = true;
       render();
-      S.toast('Platform fee captured via PayPal.', 'ok');
+      S.toast('Settlement fee captured via PayPal.', 'ok');
     }).catch(function (err) {
       S.toast((err && err.message) || 'Fee capture failed.', 'err');
     }).then(function () { state.busy = false; });
@@ -80,13 +81,15 @@
   S.api('/board/posts/' + encodeURIComponent(postId)).then(function (res) {
     state.post = res && res.post;
     if (!state.post || state.post.kind !== 'external' || state.post.status !== 'deal') throw new Error('This deal is not closed yet.');
-    if (state.post.fee_collected) { render(); return; }
+    if (!feeToken) throw new Error('This fee request link is missing its token.');
     return S.api('/config').then(function (cfg) {
       state.clientId = cfg && cfg.paypal && cfg.paypal.client_id;
-      return S.api('/board/posts/' + encodeURIComponent(postId) + '/fee-order', { method: 'POST', body: {} });
+      return S.api('/board/posts/' + encodeURIComponent(postId) + '/fee-order', { method: 'POST', body: { token: feeToken } });
     }).then(function (res) {
       state.feeOrderId = res && res.fee_order_id;
       state.approvalUrl = res && res.approval_url;
+      state.fee = res && res.amount;
+      state.paid = Boolean(res && res.already_paid);
       render();
     });
   }).catch(function (err) {

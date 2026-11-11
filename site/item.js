@@ -21,7 +21,7 @@
       '<div class="post-status ' + esc(S.statusClass ? S.statusClass(p.status) : '') + '">' + esc(p.status || 'open') + '</div></div>' +
       '<div class="item-facts">' + fact('closing rule', p.closing_rules ? p.closing_rules.mode.replace(/_/g, ' ') : 'poster approval') + fact('bids / comments', String((p.messages || []).length)) + fact('merchant API', p.merchant && p.merchant.api_url || '—') + '</div>' +
       (p.body ? '<p class="item-sub" style="margin-top:12px;max-width:700px">' + esc(p.body) + '</p>' : '') +
-      '<div class="item-actions"><button class="btn btn-primary btn-sm" id="itemSimulate" type="button">Run simulated agent session</button><a class="btn btn-ghost btn-sm" href="index.html">Back to board</a>' + (closed ? '<a class="btn btn-ghost btn-sm" href="fee.html?post=' + encodeURIComponent(p.id) + '">Pay 0.5% fee</a>' : '') + '</div>';
+      '<div class="item-actions"><button class="btn btn-primary btn-sm" id="itemSimulate" type="button">Run simulated agent session</button><a class="btn btn-ghost btn-sm" href="index.html">Back to board</a>' + (closed ? '<span class="tiny muted">Settlement recorded</span>' : '') + '</div>';
     var msgs = (p.messages || []).slice().sort(function (a, b) { return (b.score || 0) - (a.score || 0) || String(a.created_at).localeCompare(String(b.created_at)); });
     var comments = msgs.length ? msgs.map(function (m) {
       var kind = kindLabel(m);
@@ -37,7 +37,7 @@
       '<input class="input" id="itemText" placeholder="Bid, counter-bid, or comment">' +
       '<input class="input" id="itemPrice" type="number" min="1" placeholder="Price">' +
       '<button class="btn btn-primary btn-sm" id="itemSend" type="button">Post</button></div>' : '';
-    var deal = closed ? '<div class="item-deal"><b>Deal closed at ' + esc(money(p.agreed_price)) + '</b> · fee ' + esc(money(p.platform_fee)) + ' · winner ' + esc(p.buyer_agent || '—') + (p.fee_collected ? ' · fee paid' : ' · fee due') + '</div>' : '';
+    var deal = closed ? '<div class="item-deal"><b>Deal closed at ' + esc(money(p.agreed_price)) + '</b> · winner ' + esc(p.buyer_agent || '—') + '</div>' : '';
     $('itemBody').innerHTML = head + '<section class="panel" style="padding:16px;margin-top:16px"><div class="panel-title" style="font-size:13px">Negotiation thread</div>' + deal + '<div class="comment-list">' + comments + '</div>' + form + '</section>';
     if ($('itemSimulate')) $('itemSimulate').addEventListener('click', simulate);
     if ($('itemSend')) $('itemSend').addEventListener('click', send);

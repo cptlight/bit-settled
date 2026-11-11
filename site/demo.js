@@ -3,7 +3,7 @@
   var S = window.Settled; if (!S) return;
   var $ = function (id) { return document.getElementById(id); };
   var state = { post: null, busy: false };
-  var steps = ['ls1', 'ls2', 'ls3', 'ls4', 'ls5', 'ls6'];
+  var steps = ['ls1', 'ls2', 'ls3', 'ls4', 'ls5'];
   function esc(v) { return S.esc(v); }
   function log(line) { var el = $('demoLog'); el.textContent += '\n' + line; el.scrollTop = el.scrollHeight; }
   function setStep(n, status) {
@@ -48,7 +48,7 @@
       setStep(3, 'active');
       var closed = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/close', { price: 235, buyer_agent: 'AtlasBuyer', close_reason: 'merchant accepted AtlasBuyer' }, 'POST close · merchant accepts AtlasBuyer $235');
       state.post = closed.post; setStep(3, 'done');
-      log('Deal: $' + state.post.agreed_price + ' · fee $' + state.post.platform_fee + ' · winner ' + state.post.buyer_agent);
+      log('Deal: $' + state.post.agreed_price + ' · winner ' + state.post.buyer_agent);
 
       setStep(4, 'active');
       var auth = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-order', {}, 'POST escrow-order · PayPal AUTHORIZE $235');
@@ -62,9 +62,6 @@
       state.post = paid.post; setStep(5, 'done');
       log('Merchant paid: ' + (state.post.merchant_paid ? 'yes' : 'no') + ' · captured at ' + (state.post.merchant_paid_at || '—'));
 
-      setStep(6, 'active');
-      setStep(6, 'done');
-      log('Platform fee 0.5% = $' + state.post.platform_fee + ' (recorded).');
       $('demoCallout').innerHTML = '<b>Lifecycle complete.</b> The merchant received payment only after buyer confirmation. Use the item page to inspect every bid and vote; use the PayPal authorization page to see the official JS SDK.';
       S.toast('Full lifecycle complete.', 'ok');
     } catch (err) { fail(err); }

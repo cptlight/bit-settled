@@ -937,18 +937,21 @@ async function handleBoardEscrowConfirm(req, res, id) {
     ? { id: 'SIM-CAP-' + randHex(8), status: 'COMPLETED', simulated: true }
     : await paypal.captureAuthorization(authorizationId);
   const updated = board.markEscrowCaptured(id, { authorization_id: authorizationId, delivery_confirmed_at: data.nowIso() });
-  sendJson(res, 200, { post: updated, capture, mode: paypal.mode() });
+  const feeRequest = board.requestFee(id);
+  sendJson(res, 200, { post: updated, capture, mode: paypal.mode(), fee_request: feeRequest });
 }
 
 async function handleBoardFeeOrder(req, res, id) {
+  const body = await readJson(req);
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'FEE_NOT_READY', 'deal must be recorded first');
-  const fee = Number(post.platform_fee) || 0;
-  if (!(fee > 0)) return fail(res, 409, 'NO_FEE', 'no platform fee on this deal');
-  if (post.fee_collected) return sendJson(res, 200, { post, already_paid: true });
-  const order = await paypal.createOrder({ amount: fee, currency: 'USD', returnUrl: (process.env.PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || '') + '/fee.html?post=' + encodeURIComponent(id) });
-  sendJson(res, 200, { post, fee_order_id: order.id, approval_url: order.approval_url || null, amount: fee, mode: paypal.mode() });
+  const info = board.feeInfo(id);
+  if (!info || !(info.platform_fee > 0)) return fail(res, 409, 'NO_FEE', 'no platform fee on this deal');
+  if (!body.token || body.token !== info.token) return fail(res, 403, 'FEE_TOKEN_REQUIRED', 'fee request token required');
+  if (info.collected) return sendJson(res, 200, { already_paid: true, amount: info.platform_fee });
+  const order = await paypal.createOrder({ amount: info.platform_fee, currency: 'USD', returnUrl: (process.env.PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || '') + '/fee.html?post=' + encodeURIComponent(id) + '&token=' + encodeURIComponent(info.token) });
+  sendJson(res, 200, { fee_order_id: order.id, approval_url: order.approval_url || null, amount: info.platform_fee, mode: paypal.mode() });
 }
 
 async function handleBoardFeeCapture(req, res, id) {
@@ -956,6 +959,9 @@ async function handleBoardFeeCapture(req, res, id) {
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'FEE_NOT_READY', 'deal must be recorded first');
+  const info = board.feeInfo(id);
+  if (!info) return fail(res, 409, 'NO_FEE', 'no fee request for this deal');
+  if (!body.token || body.token !== info.token) return fail(res, 403, 'FEE_TOKEN_REQUIRED', 'fee request token required');
   const paypalOrderId = body.paypal_order_id || body.order_id;
   if (!paypalOrderId) return fail(res, 400, 'INVALID_ORDER', 'paypal_order_id is required');
   const capture = await paypal.captureOrder(paypalOrderId);
@@ -968,6 +974,10 @@ async function handleBoardClose(req, res, id) {
   const post = board.closePost(id, body);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   sendJson(res, 200, { post });
+}
+
+async function handleDemoSeed(req, res) {
+  sendJson(res, 200, board.seedDemo());
 }
 
 async function handleAccountRegister(req, res) {
@@ -1478,6 +1488,9 @@ async function routeApi(req, res, method, pathname, query) {
     return handleAgentPurchase(req, res);
   }
 
+  // /api/demo/seed — idempotent showcase data
+  if (seg.length === 3 && seg[1] === 'demo' && seg[2] === 'seed' && method === 'POST') return handleDemoSeed(req, res);
+
   // /api/accounts — participant registration (merchant or buyer agent)
   if (seg.length === 3 && seg[1] === 'accounts' && seg[2] === 'register' && method === 'POST') {
     return handleAccountRegister(req, res);
@@ -1577,6 +1590,10 @@ connectors.startScheduler();
 
 server.listen(PORT, HOST, () => {
   console.log(`[settled] listening on http://${HOST}:${PORT}  mode=${paypal.mode()}`);
+  if (process.env.SEED_DEMO === '1') {
+    const seeded = board.seedDemo();
+    console.log(`[settled] demo seed: ${seeded.seeded || 0} offers`);
+  }
   if (!paypal.isLive()) {
     console.log('[settled] PayPal adapter in SIM mode (set PAYPAL_LIVE=1 + credentials for live)');
   }

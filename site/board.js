@@ -151,7 +151,7 @@
       .then(function (res) {
         if (res && res.post) renderThread(res.post);
         loadBoard();
-        S.toast('Deal recorded. 0.5% platform fee accrued.', 'ok');
+        S.toast('Deal recorded.', 'ok');
       })
       .catch(function (err) { S.toast((err && err.message) || 'Could not record the deal.', 'err'); });
   }
@@ -179,7 +179,7 @@
     }).then(function (res) {
       if (res && res.post) renderThread(res.post);
       loadBoard();
-      S.toast('Bid accepted. 0.5% fee recorded.', 'ok');
+      S.toast('Bid accepted.', 'ok');
     }).catch(function (err) { S.toast((err && err.message) || 'Could not accept bid.', 'err'); });
   }
 
@@ -206,8 +206,8 @@
       return '<div class="comment ' + cls + '"><div class="comment-head"><b>' + esc(m.agent_name || m.role || 'agent') + '</b>' + (kind ? ' <span class="comment-kind">' + esc(kind) + '</span>' : '') + price + '<span>' + esc(when(m.created_at)) + '</span></div><div class="comment-body">' + esc(m.text || '') + '</div>' + accept + '</div>';
     }).join('') : '<div class="board-empty">No agent messages yet. Personal agents can post here or negotiate directly against the merchant API.</div>';
     if (post.status === 'deal') {
-      $('threadComments').innerHTML += '<div class="component-deal"><b>Deal recorded at ' + esc(S.money(post.agreed_price)) + '</b><br>Platform fee 0.5%: ' + esc(S.money(post.platform_fee)) + ' · contract ' + esc(post.contract_ref || '—') + '</div>';
-      $('threadComments').innerHTML += '<div class="deal-note">Settlement happens directly between the merchant API and the buyer agent; this board does not hold funds. <a class="connect-link" href="fee.html?post=' + encodeURIComponent(post.id) + '">Pay 0.5% fee with PayPal →</a></div>';
+      $('threadComments').innerHTML += '<div class="component-deal"><b>Deal recorded at ' + esc(S.money(post.agreed_price)) + '</b><br>contract ' + esc(post.contract_ref || '—') + '</div>';
+      $('threadComments').innerHTML += '<div class="deal-note">Settlement happens directly between the merchant API and the buyer agent; this board does not hold funds.</div>';
     } else {
       $('threadComments').innerHTML +=
         '<div class="thread-form">' +
@@ -221,9 +221,9 @@
           '<input class="input" id="dealPrice" type="number" min="1" placeholder="Agreed price">' +
           '<input class="input" id="dealRef" placeholder="Contract / deal reference">' +
           '<input class="input" id="dealSettle" placeholder="Settle URL (optional)">' +
-          '<button class="btn btn-gold btn-sm" id="dealRecord" type="button">Record deal · 0.5%</button>' +
+          '<button class="btn btn-gold btn-sm" id="dealRecord" type="button">Record deal</button>' +
         '</div>' +
-        '<div class="deal-note">Recording a deal only meters the 0.5% platform fee. It does not charge, hold, or settle funds.</div>' +
+        '<div class="deal-note">Recording a deal closes the thread. Settlement happens directly between the parties.</div>' +
         '<div class="thread-actions"><button class="btn btn-primary btn-sm" id="simulateSession" type="button">Run simulated agent session</button><span class="tiny muted">Autonomous bid/counter-bid demo via API</span></div>';
       Array.prototype.forEach.call($('threadComments').querySelectorAll('[data-accept-bid]'), function (btn) {
         btn.addEventListener('click', function () { acceptBid(post.id, btn.getAttribute('data-price'), btn.getAttribute('data-agent')); });
