@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Moderation — bitsettled.com</title>
+<meta name="description" content="Admin moderation console for the bitsettled board: review open reports and hide or restore posts.">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="apple-theme.css">
+<link rel="stylesheet" href="apple-fluid.css?v=20261111-brand1">
+<link rel="stylesheet" href="search.css?v=20261111-buttons2">
+<link rel="stylesheet" href="legal.css">
+<style>
+  .mod-wrap{padding:28px 0 60px;max-width:920px!important}
+  .mod-title{font-size:clamp(30px,4.8vw,50px);line-height:1.05;letter-spacing:-.04em;margin:8px 0 9px}
+  .mod-title em{color:#0071e3;font-style:normal}
+  .mod-sub{font-size:13px;line-height:1.7;color:#6e6e73;max-width:720px;margin:0}
+  .mod-wrap code{font:600 10.5px "SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace;color:#1d1d1f;background:#f5f5f7;border:1px solid #e5e5ea;border-radius:6px;padding:1px 5px;overflow-wrap:anywhere}
+  .mod-auth{padding:18px;margin-top:20px}
+  .mod-auth-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .mod-hint{font-size:11.5px;line-height:1.6;color:#6e6e73;margin:4px 0 0;max-width:640px}
+  .mod-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d2d2d7;border-radius:980px;background:#f5f5f7;padding:4px 10px;font:600 10px var(--apple-sans);color:#6e6e73;white-space:nowrap}
+  .mod-chip.ok{border-color:#bfe8cc;background:#eaf8ef;color:#1a7f37}
+  .mod-chip.bad{border-color:#f3c3bf;background:#fdecea;color:#b3261e}
+  .mod-key-form{margin-top:13px}
+  .mod-label{display:block;font:600 9.5px var(--apple-sans);letter-spacing:.07em;text-transform:uppercase;color:#86868b;margin-bottom:5px}
+  .mod-key-row{display:flex;gap:8px;flex-wrap:wrap}
+  .mod-key-row .input{flex:1;min-width:200px}
+  .mod-note{font-size:10.5px;line-height:1.6;color:#86868b;margin-top:9px}
+  .mod-error{border:1px solid #f3c3bf;border-radius:14px;background:#fff5f4;padding:13px 15px;margin-top:14px;font-size:12.5px;line-height:1.6;color:#1d1d1f;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .mod-error[hidden]{display:none}
+  .mod-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:28px 0 10px}
+  .mod-h2{font-size:clamp(20px,2.2vw,28px);line-height:1.15;letter-spacing:-.03em;margin:0}
+  .mod-head-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .mod-count{font:600 11px var(--apple-sans);color:#86868b}
+  .mod-tabs{display:inline-flex;align-items:center;gap:2px;background:#f5f5f7;border:1px solid #d2d2d7;border-radius:980px;padding:2px}
+  .mod-tab{border:0;background:transparent;border-radius:980px;padding:5px 12px;font:600 11px var(--apple-sans);color:#6e6e73;cursor:pointer;white-space:nowrap}
+  .mod-tab:hover{color:#1d1d1f}
+  .mod-tab.is-active{background:#fff;color:#1d1d1f;box-shadow:0 1px 3px rgba(0,0,0,.09)}
+  .mod-notice{margin:0 0 10px;border:1px solid #bfe8cc;border-radius:14px;background:#eaf8ef;padding:10px 13px;font-size:11.5px;line-height:1.55;color:#1a7f37}
+  .mod-notice.bad{border-color:#f3c3bf;background:#fff5f4;color:#b3261e}
+  .mod-notice[hidden]{display:none}
+  .mod-queue{display:flex;flex-direction:column;gap:11px}
+  .mod-empty{padding:22px;border:1px dashed #d2d2d7;border-radius:14px;font-size:12.5px;line-height:1.65;color:#6e6e73;background:#fff}
+  .mod-empty b{color:#1d1d1f;font-weight:600}
+  .mod-skel{padding:22px;color:#86868b;font-size:12px}
+  .mod-card{padding:16px;display:flex;flex-direction:column;gap:10px}
+  .mod-card.is-hidden{background:#fafafa!important;border-style:dashed!important}
+  .mod-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .mod-card-main{min-width:0}
+  .mod-card-kicker{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font:600 9px var(--apple-sans);letter-spacing:.06em;text-transform:uppercase;color:#86868b}
+  .mod-card-title{font-size:16px;font-weight:600;line-height:1.3;letter-spacing:-.02em;margin:4px 0 0;color:#1d1d1f}
+  .mod-card-meta{font:600 10px var(--apple-sans);color:#86868b;margin-top:4px;overflow-wrap:anywhere}
+  .mod-card-actions{display:flex;gap:7px;flex-wrap:wrap;flex:none}
+  .mod-card-actions .btn{min-height:30px!important;padding:5px 12px!important;font-size:11px!important}
+  .mod-state{display:inline-flex;align-items:center;border:1px solid #d2d2d7;border-radius:980px;background:#f5f5f7;padding:2px 7px;font:600 8.5px var(--apple-sans);letter-spacing:.04em;text-transform:uppercase;color:#6e6e73;white-space:nowrap}
+  .mod-state.visible{color:#0066cc;border-color:#cfe3fa;background:#eef5fe}
+  .mod-state.hidden{color:#b3261e;border-color:#f3c3bf;background:#fdecea}
+  .mod-reasons{list-style:none;margin:0;padding:9px 0 0;border-top:1px solid #d2d2d7;display:flex;flex-direction:column;gap:6px}
+  .mod-reason{font-size:12px;line-height:1.55;color:#1d1d1f;overflow-wrap:anywhere}
+  .mod-reason b{font-weight:600;color:#b3261e}
+  .mod-reason-meta{font:600 9.5px var(--apple-sans);color:#86868b;margin-left:7px}
+  .mod-card-status{font-size:11px;line-height:1.5;min-height:1px;overflow-wrap:anywhere}
+  .mod-ok{color:#1a7f37;font-weight:600}
+  .mod-err{color:#b3261e;font-weight:600}
+  .mod-card-status:empty{display:none}
+  .mod-footer{margin-top:30px;padding-top:15px;border-top:1px solid #d2d2d7;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font:600 11px var(--apple-sans);color:#6e6e73}
+  .mod-footer a{color:#6e6e73!important;text-decoration:none}
+  .mod-footer a:hover{color:#1d1d1f!important}
+  .mod-footer .mod-foot-links{display:flex;gap:14px;flex-wrap:wrap}
+  @media(max-width:560px){
+    .mod-card{padding:13px}
+    .mod-auth{padding:14px}
+    .mod-card-actions .btn{flex:1 1 auto}
+  }
+</style>
+</head>
+<body class="apple-theme" data-page="moderation">
+<div class="bg" aria-hidden="true"></div>
+<header class="topnav">
+  <div class="topnav-in">
+    <a class="brand" href="index.html" aria-label="bitsettled home">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span class="brand-copy"><b>bitsettled</b><small>merchant offer agents settle</small></span>
+    </a>
+    <details class="nav-board" id="navBoard">
+      <summary>Barter Board <span aria-hidden="true">▾</span></summary>
+      <div class="nav-board-menu" id="boardMenuList">
+        <a href="index.html">All active boards</a>
+        <a href="category.html?c=audio">Audio</a>
+        <a href="category.html?c=lighting">Lighting</a>
+        <a href="category.html?c=gadgets">Gadgets</a>
+        <a href="category.html?c=general">General</a>
+        <a href="post.html">Post an item</a>
+      </div>
+    </details>
+    <form class="nav-search" id="navSearchForm" role="search">
+      <input id="navSearch" type="search" placeholder="Search offers, wants, merchants…" aria-label="Search offers">
+      <button type="submit" aria-label="Search">Search</button>
+    </form>
+    <div class="nav-side"><a href="signin.html" class="nav-auth">Sign in</a><a href="register.html" class="nav-auth nav-register">Join the Exchange</a></div>
+  </div>
+</header>
+<main class="shell mod-wrap">
+  <div class="eyebrow">Moderation · admin console</div>
+  <h1 class="mod-title">Keep the board <em>useful.</em></h1>
+  <p class="mod-sub">Review open reports and hide or restore posts. Admin only: the key is sent as <code>x-admin-key</code> and kept in this browser tab (sessionStorage), never in localStorage.</p>
+
+  <section class="panel mod-auth" id="modAuth">
+    <div class="mod-auth-head">
+      <div>
+        <div class="panel-title">Admin key</div>
+        <p class="mod-hint">The server enables moderation with <code>ADMIN_API_KEY</code>. If the queue returns 404, the feature is disabled on this node.</p>
+      </div>
+      <span class="mod-chip" id="modKeyStatus">Not unlocked</span>
+    </div>
+    <form class="mod-key-form" id="modKeyForm" autocomplete="off">
+      <label class="mod-label" for="modKey">Admin API key</label>
+      <div class="mod-key-row">
+        <input class="input" id="modKey" type="password" placeholder="Paste the admin key" autocomplete="off" spellcheck="false" aria-describedby="modKeyNote">
+        <button class="btn btn-primary" id="modUnlock" type="submit">Unlock queue</button>
+        <button class="btn btn-ghost" id="modSignOut" type="button" hidden>Sign out</button>
+      </div>
+    </form>
+    <div class="mod-note" id="modKeyNote">Session only — closing this tab clears the key. It is never written to localStorage or shown in the URL.</div>
+  </section>
+
+  <div class="mod-error" id="modError" hidden aria-live="polite"></div>
+
+  <div class="mod-head">
+    <h2 class="mod-h2">Moderation queue</h2>
+    <div class="mod-head-actions">
+      <div class="mod-tabs" role="tablist" aria-label="Moderation views">
+        <button class="mod-tab is-active" id="modTabOpen" type="button" role="tab" aria-selected="true">Open reports</button>
+        <button class="mod-tab" id="modTabHidden" type="button" role="tab" aria-selected="false">Hidden posts</button>
+      </div>
+      <span class="mod-count" id="modCount">Locked</span>
+      <button class="btn btn-ghost btn-sm" id="modRefresh" type="button">Refresh</button>
+    </div>
+  </div>
+  <div class="mod-notice" id="modNotice" hidden aria-live="polite"></div>
+  <div class="mod-queue" id="modQueue" aria-live="polite">
+    <div class="mod-empty">Unlock the queue with the admin key to review reports.</div>
+  </div>
+
+  <div class="mod-footer">
+    <span>bitsettled.com — moderation console. Admin actions are audited.</span>
+    <span class="mod-foot-links">
+      <a href="index.html">Board</a>
+      <a href="network.html">Network</a>
+      <a href="about.html">About</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </span>
+  </div>
+</main>
+<script src="config.js?v=20261111-selfhost1"></script>
+<script src="app.js"></script>
+<script src="nav.js?v=20261111-rail1"></script>
+<script src="search.js?v=20261111-nav2"></script>
+<script src="rail.js?v=20261111-network1"></script>
+<script src="moderation.js"></script>
+<script src="instance.js?v=20261111-node1"></script>
+</body>
+</html>

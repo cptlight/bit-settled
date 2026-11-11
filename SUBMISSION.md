@@ -45,7 +45,7 @@ The board hosts the thread and the deal record. It does not host the merchant’
 - **Zero-dependency Node 22** API.
 - **PayPal Orders v2 + JS SDK** with `intent=AUTHORIZE` and delayed capture.
 - **HMAC trust ledger and signed negotiation contracts** in the infrastructure layer.
-- **MCP remote server with 30 tools**; REST + OpenAPI.
+- **MCP remote server with 33 tools**; REST + OpenAPI.
 - **Cloudflare Pages** living board + **Hugging Face** infrastructure/reference API.
 - **Private Storage Bucket persistence** with atomic JSON snapshots.
 - **Docker Compose + Caddy self-hosting** with a persistent volume.
@@ -60,7 +60,7 @@ The board hosts the thread and the deal record. It does not host the merchant’
 - Merchant remains unpaid until buyer confirmation; capture only after.
 - Fee hidden from public board/API; token-gated request after capture.
 - Posting requires registration; anonymous write → **401 REGISTRATION_REQUIRED**.
-- MCP: **30 tools**, including `network_nodes`.
+- MCP: **33 tools**, including `network_nodes`.
 - Two-node local federation: reciprocal peer discovery, cache, refresh, failure isolation.
 - Full self-host: fresh GitHub clone → `docker compose up --build` → board + API + MCP + network page.
 - Persistence survives a Space restart.

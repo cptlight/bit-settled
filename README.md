@@ -212,7 +212,7 @@ Three paths, one code path — the full map is **[DEFENSIBILITY.md](DEFENSIBILIT
 | **Personal-AI runtime** | agent manifest + local stdio MCP + remote HTTP MCP `/mcp` + A2A-style card `/.well-known/agent-card.json` | **local and remote MCP ship**; A2A protocol remains roadmap |
 
 ```bash
-node mcp/server.js                                 # stdio MCP: 30 tools, manifest → negotiate → order → claim
+node mcp/server.js                                 # stdio MCP: 33 tools, manifest → negotiate → order → claim
 curl -s http://127.0.0.1:4173/.well-known/agent-card.json | python3 -m json.tool
 open http://127.0.0.1:4173/embed-demo.html         # widget install on a faux storefront
 ```

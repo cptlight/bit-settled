@@ -34,6 +34,8 @@ const instance = require('./lib/instance');
 const network = require('./lib/network');
 const reputation = require('./lib/reputation');
 const handoff = require('./lib/handoff');
+const security = require('./lib/security');
+const moderation = require('./lib/moderation');
 
 /**
  * lib/paypal-flow.js is authored in parallel (paypal-platform-scout). Resolve it
@@ -56,7 +58,7 @@ function getPaypalFlow() {
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const MAX_BODY = 1024 * 1024; // 1 MiB
+const MAX_BODY = security.MAX_BODY_BYTES; // 64 KiB hard body cap
 const PLATFORM_FEE_BPS = (() => {
   const n = Number(process.env.PLATFORM_FEE_BPS);
   return Number.isFinite(n) && n >= 0 && n <= 1000 ? n : 50; // 0.50% default
@@ -89,9 +91,47 @@ function seedLedgerEvents() {
 const { round2, randHex, nowIso } = data;
 
 function boardAccountFromReq(req) {
-  const raw = req.headers['x-agent-key'] || req.headers['authorization'] || '';
-  const key = String(raw).replace(/^Bearer\s+/i, '').trim();
-  return board.findAccountByKey(key);
+  const rawKey = req.headers['x-agent-key'];
+  const key = String(rawKey || '').replace(/^Bearer\s+/i, '').trim();
+  if (key) {
+    const byKey = board.findAccountByKey(key);
+    if (byKey) return byKey;
+  }
+  const authorization = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (authorization) {
+    const byKey = board.findAccountByKey(authorization);
+    if (byKey) return byKey;
+    const session = security.verifySession(authorization);
+    if (session) return board.findAccountById(session.account_id);
+  }
+  return null;
+}
+
+function sessionTokenFromReq(req) {
+  return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+}
+
+/** Rate-limit a write/auth bucket; sends 429 + Retry-After when exhausted. */
+function rateLimited(req, res, category, accountId) {
+  const result = security.rateLimit(req, category, accountId);
+  if (!result.limited) return false;
+  res.setHeader('Retry-After', String(result.retryAfter));
+  fail(res, 429, 'RATE_LIMITED', `rate limit exceeded for ${category}; retry in ${result.retryAfter}s`);
+  return true;
+}
+
+/** Admin gate for the moderation surface (ADMIN_API_KEY + x-admin-key). */
+function requireAdmin(req, res) {
+  const status = moderation.adminStatus(req);
+  if (status.disabled) {
+    fail(res, 404, 'MODERATION_DISABLED', 'moderation is disabled (ADMIN_API_KEY is not configured)');
+    return false;
+  }
+  if (!status.ok) {
+    fail(res, 401, 'ADMIN_KEY_REQUIRED', 'a valid x-admin-key header is required');
+    return false;
+  }
+  return true;
 }
 
 function requireBoardAccount(req, res) {
@@ -122,17 +162,22 @@ function fail(res, status, code, message) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
+    let rejected = false;
     const chunks = [];
     req.on('data', (chunk) => {
       size += chunk.length;
+      if (rejected) return; // drain the rest without buffering
       if (size > MAX_BODY) {
-        reject(Object.assign(new Error('payload too large'), { status: 400, code: 'PAYLOAD_TOO_LARGE' }));
-        req.destroy();
+        rejected = true;
+        chunks.length = 0;
+        reject(Object.assign(new Error('payload too large (limit 64KB)'), { status: 413, code: 'PAYLOAD_TOO_LARGE' }));
         return;
       }
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('end', () => {
+      if (!rejected) resolve(Buffer.concat(chunks).toString('utf8'));
+    });
     req.on('error', reject);
   });
 }
@@ -702,6 +747,9 @@ function handleReset(req, res) {
   catalog.resetUpdated();
   reputation.reset();
   handoff.reset();
+  moderation.reset();
+  security.resetSessions();
+  security.resetRateLimits();
   seedLedgerEvents();
   sendJson(res, 200, { ok: true });
 }
@@ -883,6 +931,7 @@ async function handleBoardCreate(req, res) {
 async function handleBoardOffer(req, res) {
   const account = requireBoardAccount(req, res);
   if (!account) return;
+  if (rateLimited(req, res, 'offers', account.id)) return;
   const body = await readJson(req);
   body.poster_account_id = account.id;
   body.poster_agent = body.poster_agent || account.agent_name;
@@ -894,6 +943,7 @@ async function handleBoardOffer(req, res) {
 async function handleBoardWant(req, res) {
   const account = requireBoardAccount(req, res);
   if (!account) return;
+  if (rateLimited(req, res, 'wants', account.id)) return;
   const body = await readJson(req);
   body.poster_account_id = account.id;
   body.poster_agent = body.poster_agent || account.agent_name;
@@ -917,6 +967,8 @@ async function handleBoardCommentVote(req, res, id, messageId) {
 }
 
 async function handleBoardEscrowOrder(req, res, id) {
+  const account = boardAccountFromReq(req);
+  if (rateLimited(req, res, 'escrow', account && account.id)) return;
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
@@ -941,6 +993,8 @@ async function handleBoardEscrowOrder(req, res, id) {
 }
 
 async function handleBoardEscrowAuthorize(req, res, id) {
+  const account = boardAccountFromReq(req);
+  if (rateLimited(req, res, 'escrow', account && account.id)) return;
   const body = await readJson(req);
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
@@ -960,6 +1014,8 @@ async function handleBoardEscrowAuthorize(req, res, id) {
 }
 
 async function handleBoardEscrowConfirm(req, res, id) {
+  const account = boardAccountFromReq(req);
+  if (rateLimited(req, res, 'escrow', account && account.id)) return;
   const body = await readJson(req);
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
@@ -1016,6 +1072,8 @@ async function handleBoardArchive(req, res, id, archived) {
 }
 
 async function handleBoardClose(req, res, id) {
+  const account = boardAccountFromReq(req);
+  if (rateLimited(req, res, 'close', account && account.id)) return;
   const body = await readJson(req);
   const post = board.closePost(id, body);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
@@ -1032,8 +1090,80 @@ async function handleDemoSeed(req, res) {
 }
 
 async function handleAccountRegister(req, res) {
+  if (rateLimited(req, res, 'register')) return;
   const body = await readJson(req);
   sendJson(res, 201, board.registerAccount(body));
+}
+
+async function handleAccountLogin(req, res) {
+  if (rateLimited(req, res, 'login')) return;
+  const body = await readJson(req);
+  const agentName = typeof body.agent_name === 'string' ? body.agent_name : '';
+  const password = typeof body.password === 'string' ? body.password : '';
+  if (!agentName.trim() || !password) {
+    return fail(res, 400, 'INVALID_CREDENTIALS', 'agent_name and password are required');
+  }
+  const account = board.loginAccount(agentName, password);
+  if (!account) return fail(res, 401, 'INVALID_CREDENTIALS', 'agent_name or password is incorrect');
+  const created = security.createSession(account.id);
+  sendJson(res, 200, {
+    session: {
+      token: created.token,
+      account_id: account.id,
+      expires_at: created.session.expires_at,
+    },
+    account: board.publicAccount(account),
+  });
+}
+
+function handleAccountLogout(req, res) {
+  if (rateLimited(req, res, 'logout')) return;
+  const token = sessionTokenFromReq(req);
+  if (!token) return fail(res, 401, 'SESSION_REQUIRED', 'a Bearer session token is required');
+  if (!security.revokeSession(token)) {
+    return fail(res, 401, 'INVALID_SESSION', 'session token is unknown or already revoked');
+  }
+  sendJson(res, 200, { ok: true, revoked: true });
+}
+
+function handleAccountRotateKey(req, res) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return;
+  if (rateLimited(req, res, 'rotate_key', account.id)) return;
+  const out = board.rotateKey(account.id);
+  if (!out) return fail(res, 404, 'ACCOUNT_NOT_FOUND', 'account no longer exists');
+  sendJson(res, 200, out);
+}
+
+// ------------------------------------------------------- moderation (§C) --
+async function handleModerationReport(req, res) {
+  const account = requireBoardAccount(req, res);
+  if (!account) return undefined;
+  if (rateLimited(req, res, 'report', account.id)) return;
+  const body = await readJson(req);
+  sendJson(res, 201, moderation.report(body.post_id, body.reason, account));
+}
+
+function handleModerationQueue(req, res, query) {
+  if (!requireAdmin(req, res)) return;
+  sendJson(res, 200, moderation.queue(query.get('status')));
+}
+
+async function handleModerationHide(req, res, id) {
+  if (!requireAdmin(req, res)) return;
+  const body = await readJson(req);
+  sendJson(res, 200, moderation.hide(id, body.reason));
+}
+
+async function handleModerationRestore(req, res, id) {
+  if (!requireAdmin(req, res)) return;
+  await readJson(req);
+  sendJson(res, 200, moderation.restore(id));
+}
+
+function handleModerationActions(req, res) {
+  if (!requireAdmin(req, res)) return;
+  sendJson(res, 200, moderation.audit());
 }
 
 async function handleBoardAgentRegister(req, res) {
@@ -1044,6 +1174,7 @@ async function handleBoardAgentRegister(req, res) {
 async function handleBoardMessage(req, res, id) {
   const account = requireBoardAccount(req, res);
   if (!account) return;
+  if (rateLimited(req, res, 'messages', account.id)) return;
   const body = await readJson(req);
   body.agent_name = body.agent_name || account.agent_name;
   body.agent_account_id = account.id;
@@ -1459,6 +1590,7 @@ const server = http.createServer(async (req, res) => {
     return fail(res, 400, 'INVALID_URL', 'could not decode request path');
   }
   const method = (req.method || 'GET').toUpperCase();
+  security.applyHeaders(res, pathname);
 
   // API namespace first.
   if (pathname === '/api' || pathname.startsWith('/api/')) {
@@ -1642,9 +1774,21 @@ async function routeApi(req, res, method, pathname, query) {
   // /api/demo/seed — idempotent showcase data
   if (seg.length === 3 && seg[1] === 'demo' && seg[2] === 'seed' && method === 'POST') return handleDemoSeed(req, res);
 
-  // /api/accounts — participant registration (merchant or buyer agent)
-  if (seg.length === 3 && seg[1] === 'accounts' && seg[2] === 'register' && method === 'POST') {
-    return handleAccountRegister(req, res);
+  // /api/accounts — participant registration and session auth
+  if (seg.length === 3 && seg[1] === 'accounts' && method === 'POST') {
+    if (seg[2] === 'register') return handleAccountRegister(req, res);
+    if (seg[2] === 'login') return handleAccountLogin(req, res);
+    if (seg[2] === 'logout') return handleAccountLogout(req, res);
+    if (seg[2] === 'rotate-key') return handleAccountRotateKey(req, res);
+  }
+
+  // /api/moderation ... (reports + admin queue/hide/restore/audit)
+  if (seg[1] === 'moderation') {
+    if (seg.length === 3 && seg[2] === 'report' && method === 'POST') return handleModerationReport(req, res);
+    if (seg.length === 3 && seg[2] === 'queue' && method === 'GET') return handleModerationQueue(req, res, query);
+    if (seg.length === 3 && seg[2] === 'actions' && method === 'GET') return handleModerationActions(req, res);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'hide' && method === 'POST') return handleModerationHide(req, res, seg[3]);
+    if (seg.length === 5 && seg[2] === 'posts' && seg[4] === 'restore' && method === 'POST') return handleModerationRestore(req, res, seg[3]);
   }
 
   // /api/agents ...
@@ -1659,6 +1803,11 @@ async function routeApi(req, res, method, pathname, query) {
 
   // /api/board ... (Reddit-style public board)
   if (seg[1] === 'board') {
+    const moderatedId = seg.length >= 4 && seg[2] === 'posts' ? seg[3] : null;
+    if (moderatedId && moderation.isHidden(moderatedId)) {
+      if (method === 'GET') return fail(res, 404, 'MODERATED', 'post is hidden by moderation');
+      return fail(res, 409, 'POST_MODERATED', 'post is hidden by moderation; writes are blocked');
+    }
     if (seg.length === 2 && method === 'GET') return handleBoardList(req, res, query);
     if (seg.length === 3 && seg[2] === 'offers' && method === 'POST') return handleBoardOffer(req, res);
     if (seg.length === 3 && seg[2] === 'wants' && method === 'POST') return handleBoardWant(req, res);

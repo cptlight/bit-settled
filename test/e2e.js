@@ -279,7 +279,7 @@ async function ensureServer() {
       root: ROOT,
     });
   }
-  const childEnv = { ...process.env, PORT: String(PORT), CONNECTOR_ALLOW_PRIVATE: '1', E2E_ALLOW_PRIVATE_POLICY: '1' };
+  const childEnv = { ...process.env, PORT: String(PORT), CONNECTOR_ALLOW_PRIVATE: '1', E2E_ALLOW_PRIVATE_POLICY: '1', ADMIN_API_KEY: 'test-admin-key-e2e', RATE_LIMIT_PER_MIN: '60' };
   // Deterministic baseline: no AI key, no live PayPal, unless the caller opts in.
   // (Otherwise a developer's exported PAYPAL_LIVE=1 would make orders 'pending' and
   // the SIM-only assertions below meaningless.)
@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (30), tools/call index_manifest + network_nodes + network_boards + network_reputation, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (33), tools/call index_manifest + network_* + moderation_queue, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,8 +1912,8 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 30, `tools/list count (got: ${names.join(', ')})`);
-      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'network_reputation', 'network_handoff', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
+      eq(list.result.tools.length, 33, `tools/list count (got: ${names.join(', ')})`);
+      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'network_reputation', 'network_handoff', 'moderation_report', 'moderation_queue', 'moderation_hide', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }
       for (const t of list.result.tools) hasKeys(t, ['name', 'description', 'inputSchema'], 'tool descriptor');
@@ -1962,8 +1962,14 @@ async function main() {
       eq(typeof reputation.count, 'number', 'network_reputation count');
       assert(Array.isArray(reputation.nodes), 'network_reputation.nodes must be an array');
 
+      const modCall = await s.request({ jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'moderation_queue', arguments: { admin_key: 'test-admin-key-e2e' } } });
+      const modRes = modCall.result;
+      assert(isObj(modRes) && modRes.isError === false, `tools/call moderation_queue failed: ${JSON.stringify(modCall).slice(0, 400)}`);
+      const queue = JSON.parse(modRes.content[0].text);
+      assert(Array.isArray(queue.reports), 'moderation_queue.reports must be an array');
+
       assert(s.invalid.length === 0, `MCP stdout must be JSON-RPC lines only; non-JSON line(s): ${JSON.stringify(s.invalid)}`);
-      return `initialize ok; 30 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; network_reputation count ${reputation.count}; invalid tool isError=true`;
+      return `initialize ok; 33 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; network_reputation count ${reputation.count}; moderation_queue reports ${queue.count}; invalid tool isError=true`;
     } finally {
       // Guarantee no stray stdio child: close stdin, SIGTERM, then SIGKILL if it lingers.
       try {
@@ -2764,6 +2770,161 @@ async function main() {
 
     await reset();
     return `2 Ed25519 receipts verified locally (${selfEntry.receipts[0].id}); handoff ${created.handoff_id} signed+verified; 401/404/400 paths ok`;
+  });
+
+  // =========================================================================
+  // v10 — production hardening: headers, body cap, sessions, moderation
+  // =========================================================================
+  const ADMIN_KEY = 'test-admin-key-e2e';
+
+  await test('T89', 'v10 security headers + 64KB body cap + password sessions + rotate-key/logout', async () => {
+    await reset();
+
+    const health = await get('/api/health');
+    eq(health.status, 200, 'health status');
+    eq(health.headers['x-content-type-options'], 'nosniff', 'X-Content-Type-Options');
+    eq(health.headers['referrer-policy'], 'strict-origin-when-cross-origin', 'Referrer-Policy');
+    assert(typeof health.headers['permissions-policy'] === 'string' && /camera=\(\)/.test(health.headers['permissions-policy']), 'Permissions-Policy');
+    eq(health.headers['x-frame-options'], 'SAMEORIGIN', 'X-Frame-Options');
+    assert(!health.headers['strict-transport-security'], 'HSTS must only be sent for https PUBLIC_SITE_URL');
+    const embed = await get('/embed-demo.html');
+    eq(embed.status, 200, 'embed page status');
+    assert(!embed.headers['x-frame-options'], 'embed page must not send X-Frame-Options');
+    assert(/frame-ancestors/.test(embed.headers['content-security-policy'] || ''), 'embed page CSP frame-ancestors');
+
+    const big = 'a'.repeat(70 * 1024);
+    const tooBig = await http('POST', '/api/accounts/register', { body: `{"role":"buyer","display_name":"${big}"}` });
+    eq(tooBig.status, 413, 'oversized body status');
+    eq(tooBig.json && tooBig.json.error && tooBig.json.error.code, 'PAYLOAD_TOO_LARGE', 'oversized body code');
+
+    const register = await post('/api/accounts/register', {
+      role: 'merchant', display_name: 'Hardened Merchant', agent_name: 'HardenedMerchantAgent', password: 'correct horse battery',
+    });
+    eq(register.status, 201, 'register with password');
+    assert(!JSON.stringify(register.json).includes('scrypt') && !JSON.stringify(register.json).includes('correct horse'), 'password/hash must never be returned');
+    const oldKey = register.json.api_key;
+
+    eq((await post('/api/accounts/register', { role: 'buyer', display_name: 'Passwordless', password: 'short' })).status, 400, 'short password rejected');
+    eq((await post('/api/accounts/register', { role: 'buyer', display_name: 'Passwordless Buyer' })).status, 201, 'key-only registration still works');
+
+    assertErrorShape(await post('/api/accounts/login', { agent_name: 'HardenedMerchantAgent', password: 'wrong password' }), 401, 'wrong password');
+    const login = await post('/api/accounts/login', { agent_name: 'hardenedmerchantagent', password: 'correct horse battery' });
+    eq(login.status, 200, 'login');
+    hasKeys(login.json, ['session', 'account'], 'login response');
+    hasKeys(login.json.session, ['token', 'account_id', 'expires_at'], 'login session');
+    assert(!JSON.stringify(login.json).includes('scrypt'), 'login must not expose the password hash');
+    const token = login.json.session.token;
+    assert(typeof token === 'string' && token.length >= 40, 'session token must be 32-byte random');
+
+    const viaSession = await http('POST', '/api/board/offers', {
+      headers: { authorization: `Bearer ${token}` },
+      body: { title: 'Session offer', price_min: 10, price_max: 20, merchant_api: 'https://hardened.example/api' },
+    });
+    eq(viaSession.status, 201, 'Bearer session can write');
+
+    assertErrorShape(await post('/api/accounts/rotate-key', {}), 401, 'rotate-key requires auth');
+    const rotatedAuth = await http('POST', '/api/accounts/rotate-key', { headers: { authorization: `Bearer ${token}` }, body: {} });
+    eq(rotatedAuth.status, 200, 'rotate-key via session');
+    hasKeys(rotatedAuth.json, ['api_key', 'rotated_at'], 'rotate-key response');
+    const newKey = rotatedAuth.json.api_key;
+    assert(newKey !== oldKey, 'rotate-key must change the key');
+
+    assertErrorShape(await http('POST', '/api/board/offers', { headers: { 'x-agent-key': oldKey }, body: { title: 'Old key', price_min: 10, price_max: 20, merchant_api: 'https://x.example/api' } }), 401, 'old key invalidated');
+    eq((await http('POST', '/api/board/offers', { headers: { 'x-agent-key': newKey }, body: { title: 'New key', price_min: 10, price_max: 20, merchant_api: 'https://x.example/api' } })).status, 201, 'new key works');
+
+    eq((await http('POST', '/api/accounts/logout', { headers: { authorization: `Bearer ${token}` } })).status, 200, 'logout');
+    assertErrorShape(await http('POST', '/api/board/offers', { headers: { authorization: `Bearer ${token}` }, body: { title: 'After logout', price_min: 10, price_max: 20, merchant_api: 'https://x.example/api' } }), 401, 'logged-out session rejected');
+
+    await reset();
+    return `headers ok (nosniff/referrer/permissions/frame, no HSTS on http); 64KB cap 413; session login→write→rotate-key→logout enforced`;
+  });
+
+  await test('T90', 'v10 moderation report/queue/hide/restore/audit + hidden reads/writes + 429 rate limit', async () => {
+    await reset();
+
+    const reg = await post('/api/accounts/register', { role: 'merchant', display_name: 'Mod Merchant', agent_name: 'ModMerchantAgent' });
+    const key = reg.json.api_key;
+    const offer = await http('POST', '/api/board/offers', {
+      headers: { 'x-agent-key': key },
+      body: { title: 'Moderated lamp', price_min: 20, price_max: 30, merchant_api: 'https://mod.example/api', category: 'Lighting' },
+    });
+    eq(offer.status, 201, 'moderated offer created');
+    const postId = offer.json.post.id;
+
+    assertErrorShape(await post('/api/moderation/report', { post_id: postId, reason: 'spam' }), 401, 'report requires auth');
+    const report = await http('POST', '/api/moderation/report', {
+      headers: { 'x-agent-key': key }, body: { post_id: postId, reason: 'spam sample' },
+    });
+    eq(report.status, 201, 'report created');
+    hasKeys(report.json, ['report'], 'report response');
+    hasKeys(report.json.report, ['id', 'post_id', 'reason', 'status', 'reporter', 'created_at', 'actioned_at'], 'report fields');
+    eq(report.json.report.status, 'open', 'report status open');
+    assertErrorShape(await http('POST', '/api/moderation/report', { headers: { 'x-agent-key': key }, body: { post_id: postId } }), 400, 'report without reason');
+
+    assertErrorShape(await get('/api/moderation/queue'), 401, 'queue without admin key');
+    assertErrorShape(await http('GET', '/api/moderation/queue', { headers: { 'x-admin-key': 'wrong-key' } }), 401, 'queue wrong admin key');
+    const queue = await http('GET', '/api/moderation/queue?status=open', { headers: { 'x-admin-key': ADMIN_KEY } });
+    eq(queue.status, 200, 'admin queue');
+    eq(queue.json.status, 'open', 'queue status');
+    eq(queue.json.count, 1, 'queue count');
+    const queued = queue.json.reports[0];
+    hasKeys(queued, ['id', 'post_id', 'reason', 'status', 'reporter', 'post'], 'queue entry');
+    eq(queued.post.id, postId, 'queue post id');
+    assert(queued.post.hidden === false, 'queue post hidden flag');
+
+    assertErrorShape(await http('POST', `/api/moderation/posts/${postId}/hide`, { headers: { 'x-admin-key': 'wrong-key' }, body: {} }), 401, 'hide wrong key');
+    const hide = await http('POST', `/api/moderation/posts/${postId}/hide`, { headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'confirmed spam' } });
+    eq(hide.status, 200, 'hide post');
+    eq(hide.json.hidden, true, 'hide response hidden');
+    hasKeys(hide.json.action, ['id', 'action', 'post_id', 'actor', 'created_at'], 'hide action');
+    eq(hide.json.action.action, 'hide', 'action kind');
+    eq(hide.json.action.actor, 'admin', 'action actor');
+
+    assertErrorShape(await get(`/api/board/posts/${postId}`), 404, 'hidden post direct read');
+    eq((await get(`/api/board/posts/${postId}`)).json.error.code, 'MODERATED', 'hidden read code');
+    assertErrorShape(await http('POST', `/api/board/posts/${postId}/messages`, { headers: { 'x-agent-key': key }, body: { role: 'buyer_agent', agent_name: 'x', text: 'hi' } }), 409, 'hidden write blocked');
+    const list = await get('/api/board');
+    eq(list.status, 200, 'board list after hide');
+    assert(!list.json.posts.some((p) => p.id === postId), 'hidden post must not appear on the board');
+
+    const hiddenQueue = await http('GET', '/api/moderation/queue?status=hidden', { headers: { 'x-admin-key': ADMIN_KEY } });
+    eq(hiddenQueue.status, 200, 'hidden queue');
+    eq(hiddenQueue.json.status, 'hidden', 'hidden queue status');
+    eq(hiddenQueue.json.count, 1, 'hidden queue count');
+    hasKeys(hiddenQueue.json.posts[0], ['id', 'title', 'hidden', 'hidden_at', 'reason'], 'hidden post summary');
+    eq(hiddenQueue.json.posts[0].hidden, true, 'hidden queue post hidden flag');
+
+    const actioned = await http('GET', '/api/moderation/queue?status=actioned', { headers: { 'x-admin-key': ADMIN_KEY } });
+    eq(actioned.status, 200, 'actioned queue');
+    eq(actioned.json.count, 1, 'hide actioned the open report');
+
+    const audit = await http('GET', '/api/moderation/actions', { headers: { 'x-admin-key': ADMIN_KEY } });
+    eq(audit.status, 200, 'audit');
+    eq(audit.json.count, 1, 'audit count');
+    eq(audit.json.actions[0].action, 'hide', 'audit action');
+
+    const restore = await http('POST', `/api/moderation/posts/${postId}/restore`, { headers: { 'x-admin-key': ADMIN_KEY }, body: {} });
+    eq(restore.status, 200, 'restore post');
+    eq(restore.json.hidden, false, 'restore hidden flag');
+    eq((await get(`/api/board/posts/${postId}`)).status, 200, 'restored post readable');
+    assertErrorShape(await http('POST', '/api/moderation/posts/ext_missing/hide', { headers: { 'x-admin-key': ADMIN_KEY }, body: {} }), 404, 'hide unknown post');
+
+    // Rate limit: 60 reports/min per account+IP. One report already counted above.
+    // Two report requests already counted in this window: the success above and
+    // the missing-reason 400. Fill the remaining 58 allowed writes, then 429.
+    let allowed = 0;
+    for (let i = 0; i < 58; i += 1) {
+      const res = await http('POST', '/api/moderation/report', { headers: { 'x-agent-key': key }, body: { post_id: postId, reason: `flood ${i}` } });
+      if (res.status === 201) allowed += 1;
+    }
+    eq(allowed, 58, 'first 60 writes in the window are allowed');
+    const limited = await http('POST', '/api/moderation/report', { headers: { 'x-agent-key': key }, body: { post_id: postId, reason: 'one too many' } });
+    eq(limited.status, 429, '61st write is rate limited');
+    eq(limited.json.error.code, 'RATE_LIMITED', 'rate limit code');
+    assert(Number(limited.headers['retry-after']) >= 1, '429 carries Retry-After');
+
+    await reset();
+    return `report→queue→hide→restore→audit ok; hidden read 404 MODERATED + write 409; 60/min then 429 RATE_LIMITED+Retry-After`;
   });
 }
 

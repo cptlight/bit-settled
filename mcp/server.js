@@ -151,6 +151,47 @@ const TOOLS = [
     },
   },
   {
+    name: 'moderation_report',
+    description: 'Report a board post for moderation. Requires a participant API key; returns a stored report id.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        post_id: { type: 'string', description: 'Board post id to report' },
+        reason: { type: 'string', description: 'Why the post should be reviewed' },
+        api_key: { type: 'string', description: 'Participant API key' },
+      },
+      required: ['post_id', 'reason', 'api_key'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'moderation_queue',
+    description: 'Admin: read the moderation report queue (status open|actioned|all|hidden). Requires x-admin-key via admin_key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['open', 'actioned', 'all', 'hidden'] },
+        admin_key: { type: 'string', description: 'ADMIN_API_KEY value' },
+      },
+      required: ['admin_key'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'moderation_hide',
+    description: 'Admin: hide a board post from public reads and block writes. Requires x-admin-key via admin_key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        post_id: { type: 'string' },
+        reason: { type: 'string' },
+        admin_key: { type: 'string', description: 'ADMIN_API_KEY value' },
+      },
+      required: ['post_id', 'admin_key'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'negotiate_start',
     description: 'Open a negotiable contract with a merchant for a product, within the buyer mandate.',
     inputSchema: {
@@ -436,6 +477,25 @@ const RUNNERS = {
     const body = { post_id: args.post_id };
     if (args.target_url) body.target_url = args.target_url;
     return rest('/api/network/handoff', { method: 'POST', body, headers: authHeaders(args.api_key) });
+  },
+  async moderation_report(args) {
+    return rest('/api/moderation/report', {
+      method: 'POST',
+      body: { post_id: args.post_id, reason: args.reason },
+      headers: authHeaders(args.api_key),
+    });
+  },
+  async moderation_queue(args) {
+    return rest('/api/moderation/queue' + qs({ status: args.status }), {
+      headers: { 'x-admin-key': String(args.admin_key || '') },
+    });
+  },
+  async moderation_hide(args) {
+    return rest('/api/moderation/posts/' + encodeURIComponent(args.post_id) + '/hide', {
+      method: 'POST',
+      body: { reason: args.reason },
+      headers: { 'x-admin-key': String(args.admin_key || '') },
+    });
   },
   async negotiate_start(args) {
     const body = {

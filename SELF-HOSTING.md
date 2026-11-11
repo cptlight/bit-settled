@@ -37,6 +37,16 @@ Caddy :8080
 
 Never commit `.env` or PayPal secrets.
 
+## Production hardening env
+
+```text
+ADMIN_API_KEY=change-me-long-random
+RATE_LIMIT_PER_MIN=60
+TRUST_PROXY=1
+```
+
+`/moderation.html` uses the admin key; keep it in sessionStorage only. Moderation, rate limits and password sessions are implemented. Still not production-grade: in-memory rate buckets, single admin key, no MFA, no email recovery, JSON snapshot persistence, unauthenticated `/api/reset`.
+
 ## Go live
 
 Once the PayPal business app is approved and KYC is complete:
