@@ -23,12 +23,25 @@ The Hugging Face layer also retains the earlier trust-ledger, contract and claim
 
 Zero dependencies. Node built-ins only.
 
+## Run locally
+
+**Living board (recommended):**
+
 ```bash
 cd bit-settled
-node server.js           # → http://127.0.0.1:4173
-npm start                # same
-npm test                 # e2e API tests (spawns its own server, port 4400)
+cp .env.example .env
+docker compose up --build     # → http://127.0.0.1:8080
 ```
+
+**Infrastructure demo** (the older `public/` surfaces):
+
+```bash
+node server.js               # → http://127.0.0.1:4173
+npm start                    # same
+npm test                     # e2e API tests (spawns its own server, port 4400)
+```
+
+`node server.js` serves `public/`; Docker/Caddy serves the living `site/` board. Use Docker for the product demo.
 
 ## Moderation + hardening
 
@@ -52,7 +65,9 @@ Every self-hosted deployment is a network node. Set `NETWORK_ID`, `INSTANCE_NAME
 
 **[PERSISTENCE.md](PERSISTENCE.md)** — the least-database option: a private Hugging Face Storage Bucket mounted at `/data`, with a debounced atomic JSON snapshot. No DB required for one replica.
 
-## Pages
+## Infrastructure demo pages (`public/`)
+
+These are served by `node server.js` on port 4173. For the living board use Docker on port 8080.
 
 | URL | What it shows |
 |---|---|
@@ -68,6 +83,19 @@ Every self-hosted deployment is a network node. Set `NETWORK_ID`, `INSTANCE_NAME
 | `/store.html?merchant=m1` | **Storefront** — trust panel, checkout with risk-priced protection, receipt, instant claim |
 | `/agent.html` | **Agent console** — `POST /api/trust/verify`, threshold policy, agent purchase |
 | `/api/health` | API health + mode (`sim` / `paypal`) |
+
+## Living board pages (`site/`)
+
+Served by Docker/Caddy at port 8080 and deployed at bitsettled.com.
+
+| URL | What it shows |
+|---|---|
+| `/` | Public barter board, categories, bids and search |
+| `/post` | Dedicated Post an Item page |
+| `/network` | Independent-node discovery, cross-node offers and portable reputation |
+| `/demo` | PayPal-first lifecycle and deterministic simulation |
+| `/moderation` | Admin moderation console |
+| `/register` | Participant registration |
 
 Seeded merchants:
 
