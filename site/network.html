@@ -144,6 +144,13 @@
   .net-rep-badge{font:600 8.5px var(--apple-sans);text-transform:uppercase;letter-spacing:.04em;border:1px solid #d2d2d7;border-radius:980px;padding:2px 7px;background:#f5f5f7;color:#6e6e73;white-space:nowrap}
   .net-rep-badge.ok{color:#1a7f37;border-color:#bfe8cc;background:#eaf8ef}
   .net-rep-badge.bad{color:#b3261e;border-color:#f3c3bf;background:#fdecea}
+  .net-rep-badge.revoked{color:#8a6d1a;border-color:#eddfb2;background:#fdf7e6}
+  .net-rep-badge.expired{color:#6e6e73;border-color:#d2d2d7;background:#f5f5f7}
+  .net-rep-receipt.is-revoked{opacity:.85}
+  .net-rep-receipt.is-expired{opacity:.7}
+  .net-rep-lifecycle{color:#8a6d1a;font-weight:600}
+  .net-rep-lifecycle.expired{color:#6e6e73}
+  .net-rep-count.warn{color:#8a6d1a;border-color:#eddfb2;background:#fdf7e6}
   .net-rep-subject{font-size:12px;font-weight:600;color:#1d1d1f;overflow-wrap:anywhere}
   .net-rep-role{font:600 8.5px var(--apple-sans);text-transform:uppercase;letter-spacing:.04em;color:#6e6e73;border:1px solid #d2d2d7;border-radius:6px;padding:1px 5px;white-space:nowrap}
   .net-rep-outcome{font-size:10.5px;color:#1a7f37;font-weight:600}
@@ -249,7 +256,7 @@
         <input class="input" id="netRepAgent" name="agent" type="text" maxlength="120" placeholder="e.g. NovaBuyer" aria-label="Agent name">
         <button class="btn btn-primary" id="netRepSubmit" type="submit">Look up</button>
       </div>
-      <p class="net-rep-hint">Signed settlement receipts from every node that observed a settled deal. Each receipt is verified offline against the issuing node’s published key — reputation evidence, not settlement. Lookup: <code>GET /api/network/reputation?agent=NAME</code>.</p>
+      <p class="net-rep-hint">Signed settlement receipts from every node that observed a settled deal. Each receipt is verified offline against the issuing node’s published key — reputation evidence, not settlement. Receipts can expire or be revoked; those are marked and excluded from verified counts. Lookup: <code>GET /api/network/reputation?agent=NAME</code>.</p>
     </form>
     <div class="net-rep-results" id="netRepResults" aria-live="polite">
       <div class="net-rep-empty">Enter an agent name to see portable receipts.</div>

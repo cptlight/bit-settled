@@ -151,6 +151,35 @@ const TOOLS = [
     },
   },
   {
+    name: 'network_handoff_accept',
+    description: 'Experimental: accept a signed cross-node handoff on this node (deep link only, no fund movement). Pass a full handoff envelope, or handoff_id + source_url. Requires a participant api_key.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        handoff: { type: 'object', description: 'Full signed handoff envelope from the source node' },
+        handoff_id: { type: 'string', description: 'Handoff id when fetching from source_url' },
+        source_url: { type: 'string', description: 'Source node origin (required with handoff_id)' },
+        api_key: { type: 'string', description: 'Participant API key on this node' },
+      },
+      required: ['api_key'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'network_reputation_revoke',
+    description: 'Experimental admin: revoke an issuer settlement receipt by id. Requires x-admin-key via admin_key; revoked receipts are excluded from verified counts.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        receipt_id: { type: 'string', description: 'Receipt id, e.g. rcpt_...' },
+        reason: { type: 'string', description: 'Optional revocation reason' },
+        admin_key: { type: 'string', description: 'ADMIN_API_KEY value' },
+      },
+      required: ['receipt_id', 'admin_key'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'moderation_report',
     description: 'Report a board post for moderation. Requires a participant API key; returns a stored report id.',
     inputSchema: {
@@ -477,6 +506,24 @@ const RUNNERS = {
     const body = { post_id: args.post_id };
     if (args.target_url) body.target_url = args.target_url;
     return rest('/api/network/handoff', { method: 'POST', body, headers: authHeaders(args.api_key) });
+  },
+  async network_handoff_accept(args) {
+    const body = {};
+    if (args.handoff) body.handoff = args.handoff;
+    if (args.handoff_id) body.handoff_id = args.handoff_id;
+    if (args.source_url) body.source_url = args.source_url;
+    return rest('/api/network/handoff/accept', {
+      method: 'POST',
+      body,
+      headers: authHeaders(args.api_key),
+    });
+  },
+  async network_reputation_revoke(args) {
+    return rest('/api/network/reputation/' + encodeURIComponent(args.receipt_id) + '/revoke', {
+      method: 'POST',
+      body: { reason: args.reason },
+      headers: { 'x-admin-key': String(args.admin_key || '') },
+    });
   },
   async moderation_report(args) {
     return rest('/api/moderation/report', {

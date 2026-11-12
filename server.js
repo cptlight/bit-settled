@@ -1249,14 +1249,62 @@ async function handleNetworkHandoffCreate(req, res) {
     self: instance.info(paypal.mode()),
     post,
     target_url: body.target_url,
+    context: body.context,
   });
   sendJson(res, 201, out);
 }
 
-function handleNetworkHandoffGet(req, res, id) {
-  const out = handoff.get(id);
+async function handleNetworkHandoffGet(req, res, id) {
+  const out = await handoff.getWithAcceptance(id, { self: instance.info(paypal.mode()) });
   if (!out) return fail(res, 404, 'HANDOFF_NOT_FOUND', `no handoff '${id}'`);
   sendJson(res, 200, out);
+}
+
+/** Experimental: accept a signed handoff on this node (no fund movement). */
+async function handleNetworkHandoffAccept(req, res) {
+  const body = await readJson(req);
+  let account = boardAccountFromReq(req);
+  if (!account && typeof body.api_key === 'string') {
+    account = board.findAccountByKey(body.api_key.trim());
+  }
+  if (!account) {
+    return fail(res, 401, 'REGISTRATION_REQUIRED', 'register a participant and pass x-agent-key or api_key');
+  }
+  if (rateLimited(req, res, 'handoff_accept', account.id)) return;
+  const out = await handoff.accept({
+    self: instance.info(paypal.mode()),
+    handoff: body.handoff,
+    handoff_id: body.handoff_id,
+    source_url: body.source_url,
+    account,
+  });
+  sendJson(res, 200, out);
+}
+
+function handleNetworkHandoffs(req, res) {
+  sendJson(res, 200, handoff.list());
+}
+
+function handleNetworkHandoffAccepted(req, res, id) {
+  const out = handoff.getAccepted(id);
+  if (!out) return fail(res, 404, 'HANDOFF_NOT_ACCEPTED', `handoff '${id}' has not been accepted on this node`);
+  sendJson(res, 200, out);
+}
+
+/** Experimental: issuer-only receipt revocation (admin key). */
+async function handleNetworkReputationRevoke(req, res, id) {
+  if (!requireAdmin(req, res)) return;
+  const body = await readJson(req);
+  const out = reputation.revoke(id, body.reason);
+  if (out.notFound) return fail(res, 404, 'RECEIPT_NOT_FOUND', `no receipt '${id}' on this node`);
+  if (out.notIssuer) return fail(res, 403, 'NOT_ISSUER', 'only the issuing node can revoke this receipt');
+  sendJson(res, 200, out);
+}
+
+/** Experimental: rotate the node Ed25519 key, retaining public history. */
+function handleNetworkReputationRotate(req, res) {
+  if (!requireAdmin(req, res)) return;
+  sendJson(res, 200, reputation.rotateKey());
 }
 
 function handleConfig(req, res) {
@@ -1673,14 +1721,37 @@ async function routeApi(req, res, method, pathname, query) {
     return handleNetworkReputation(req, res, query);
   }
 
+  // POST /api/network/reputation/rotate-key — experimental key rotation
+  if (method === 'POST' && seg.length === 4 && seg[1] === 'network' && seg[2] === 'reputation' && seg[3] === 'rotate-key' && reputation.lifecycleEnabled()) {
+    return handleNetworkReputationRotate(req, res);
+  }
+
+  // POST /api/network/reputation/:id/revoke — experimental issuer revocation
+  if (method === 'POST' && seg.length === 5 && seg[1] === 'network' && seg[2] === 'reputation' && seg[4] === 'revoke' && reputation.lifecycleEnabled()) {
+    return handleNetworkReputationRevoke(req, res, seg[3]);
+  }
+
   // POST /api/network/handoff — experimental signed cross-node deep link
   if (method === 'POST' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'handoff' && handoff.enabled()) {
     return handleNetworkHandoffCreate(req, res);
   }
 
-  // GET /api/network/handoff/:id — read a stored handoff envelope
+  // POST /api/network/handoff/accept — target node accepts a signed handoff
+  if (method === 'POST' && seg.length === 4 && seg[1] === 'network' && seg[2] === 'handoff' && seg[3] === 'accept' && handoff.acceptEnabled()) {
+    return handleNetworkHandoffAccept(req, res);
+  }
+
+  // GET /api/network/handoff/:id — read a stored handoff envelope (+acceptance)
   if (method === 'GET' && seg.length === 4 && seg[1] === 'network' && seg[2] === 'handoff' && handoff.enabled()) {
     return handleNetworkHandoffGet(req, res, seg[3]);
+  }
+
+  // GET /api/network/handoffs[/:id] — accepted handoff records on this node
+  if (method === 'GET' && seg.length === 3 && seg[1] === 'network' && seg[2] === 'handoffs' && handoff.acceptEnabled()) {
+    return handleNetworkHandoffs(req, res);
+  }
+  if (method === 'GET' && seg.length === 4 && seg[1] === 'network' && seg[2] === 'handoffs' && handoff.acceptEnabled()) {
+    return handleNetworkHandoffAccepted(req, res, seg[3]);
   }
 
   // /api/merchants ...

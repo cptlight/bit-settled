@@ -1897,7 +1897,7 @@ async function main() {
     };
   }
 
-  await test('T77', 'v6 MCP stdio: initialize, tools/list (33), tools/call index_manifest + network_* + moderation_queue, invalid tool', async () => {
+  await test('T77', 'v6 MCP stdio: initialize, tools/list (35), tools/call index_manifest + network_* + moderation_queue, invalid tool', async () => {
     const s = await mcpSession(BASE);
     try {
       const init = await s.request({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'settled-e2e', version: '1.0' } } });
@@ -1912,8 +1912,8 @@ async function main() {
       const list = await s.request({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
       assert(Array.isArray(list.result && list.result.tools), 'tools/list must return result.tools[]');
       const names = list.result.tools.map((t) => t.name);
-      eq(list.result.tools.length, 33, `tools/list count (got: ${names.join(', ')})`);
-      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'network_reputation', 'network_handoff', 'moderation_report', 'moderation_queue', 'moderation_hide', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
+      eq(list.result.tools.length, 35, `tools/list count (got: ${names.join(', ')})`);
+      for (const n of ['index_manifest', 'index_feed', 'index_search', 'network_nodes', 'network_boards', 'network_reputation', 'network_handoff', 'network_handoff_accept', 'network_reputation_revoke', 'moderation_report', 'moderation_queue', 'moderation_hide', 'negotiate_start', 'negotiate_auto', 'order_create', 'claim_open']) {
         assert(names.includes(n), `tools/list missing "${n}" (has: ${names.join(', ')})`);
       }
       for (const t of list.result.tools) hasKeys(t, ['name', 'description', 'inputSchema'], 'tool descriptor');
@@ -1969,7 +1969,7 @@ async function main() {
       assert(Array.isArray(queue.reports), 'moderation_queue.reports must be an array');
 
       assert(s.invalid.length === 0, `MCP stdout must be JSON-RPC lines only; non-JSON line(s): ${JSON.stringify(s.invalid)}`);
-      return `initialize ok; 33 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; network_reputation count ${reputation.count}; moderation_queue reports ${queue.count}; invalid tool isError=true`;
+      return `initialize ok; 35 tools; index_manifest totals ${JSON.stringify(manifest.totals)}; network_nodes count ${network.count}; network_boards peers ${boards.count}; network_reputation count ${reputation.count}; moderation_queue reports ${queue.count}; invalid tool isError=true`;
     } finally {
       // Guarantee no stray stdio child: close stdin, SIGTERM, then SIGKILL if it lingers.
       try {
@@ -2925,6 +2925,287 @@ async function main() {
 
     await reset();
     return `report→queue→hide→restore→audit ok; hidden read 404 MODERATED + write 409; 60/min then 429 RATE_LIMITED+Retry-After`;
+  });
+
+  // =========================================================================
+  // v11 — handoff acceptance/context + reputation lifecycle
+  // =========================================================================
+  await test('T91', 'v11 handoff context + target acceptance/list/read + source accepted status', async () => {
+    await reset();
+
+    async function freePort() {
+      const net = require('node:net');
+      return new Promise((resolvePort, rejectPort) => {
+        const srv = net.createServer();
+        srv.once('error', rejectPort);
+        srv.listen(0, '127.0.0.1', () => {
+          const { port } = srv.address();
+          srv.close(() => resolvePort(port));
+        });
+      });
+    }
+
+    async function startExtraNode(port) {
+      const childEnv = {
+        ...process.env,
+        PORT: String(port),
+        HOST: '127.0.0.1',
+        PUBLIC_SITE_URL: `http://127.0.0.1:${port}`,
+        NETWORK_ID: `extra-${port}`,
+        INSTANCE_NAME: `Extra Node ${port}`,
+        ADMIN_API_KEY: ADMIN_KEY,
+        RATE_LIMIT_PER_MIN: '60',
+      };
+      for (const k of ['AI_API_KEY', 'PAYPAL_LIVE', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'STATE_PATH', 'NETWORK_SEEDS']) delete childEnv[k];
+      const proc = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: childEnv, stdio: ['ignore', 'pipe', 'pipe'] });
+      let output = '';
+      proc.stdout.on('data', (d) => (output += d.toString()));
+      proc.stderr.on('data', (d) => (output += d.toString()));
+      const url = `http://127.0.0.1:${port}`;
+      const deadline = Date.now() + BOOT_TIMEOUT;
+      while (Date.now() < deadline) {
+        if (proc.exitCode !== null) fail(`extra node exited before boot (code ${proc.exitCode})`, { output: output.slice(-1200) });
+        try {
+          const r = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(1000) });
+          if (r.ok) return { proc, url };
+        } catch {
+          // not up yet
+        }
+        await sleep(150);
+      }
+      fail('extra node did not answer /api/health', { output: output.slice(-1200), port });
+      return null;
+    }
+
+    const extraPort = await freePort();
+    let extra = null;
+    try {
+      extra = await startExtraNode(extraPort);
+
+      const xhttp = async (method, extraPath, opts = {}) => {
+        const init = {
+          method,
+          headers: { ...(opts.headers || {}) },
+          signal: AbortSignal.timeout(opts.timeout || HTTP_TIMEOUT),
+        };
+        if (opts.body !== undefined) {
+          init.body = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
+          init.headers['content-type'] = init.headers['content-type'] || 'application/json';
+        }
+        const res = await fetch(extra.url + extraPath, init);
+        const text = await res.text();
+        let json;
+        try { json = JSON.parse(text); } catch { json = undefined; }
+        return { status: res.status, headers: Object.fromEntries(res.headers.entries()), text, json };
+      };
+
+      const mainReg = await post('/api/accounts/register', { role: 'merchant', display_name: 'Handoff Source', agent_name: 'HandoffSourceAgent' });
+      const mainKey = mainReg.json.api_key;
+      const offer = await http('POST', '/api/board/offers', {
+        headers: { 'x-agent-key': mainKey },
+        body: { title: 'Handoff context item', price_min: 50, price_max: 70, merchant_api: 'https://handoff.example/api', category: 'Audio' },
+      });
+      eq(offer.status, 201, 'handoff source offer');
+      const postId = offer.json.post.id;
+
+      const context = {
+        post_id: postId, price: 61.5, buyer_agent: 'AcceptBuyer',
+        seller_agent: 'Handoff Source', source_deal_id: 'deal_src_1',
+      };
+      const created = await http('POST', '/api/network/handoff', {
+        headers: { 'x-agent-key': mainKey },
+        body: { post_id: postId, target_url: extra.url, context },
+      });
+      eq(created.status, 201, 'create handoff with context');
+      const envelope = created.json.handoff;
+      hasKeys(envelope, ['schema', 'handoff_id', 'source_network_id', 'source_public_key', 'target', 'post_id', 'item_url', 'created_at', 'context', 'signature'], 'handoff envelope with context');
+      eq(envelope.target.network_id, `extra-${extraPort}`, 'handoff target network id');
+      eq(envelope.context.price, 61.5, 'signed context price');
+      eq(envelope.context.buyer_agent, 'AcceptBuyer', 'signed context buyer');
+      assert(envelope.signature.length > 40, 'handoff signature present');
+
+      const targetReg = await xhttp('POST', '/api/accounts/register', { body: { role: 'buyer', display_name: 'Target Acceptor', agent_name: 'TargetAcceptorAgent' } });
+      eq(targetReg.status, 201, 'target node registration');
+      const targetKey = targetReg.json.api_key;
+      const targetAccountId = targetReg.json.participant.id;
+
+      assertErrorShape(await xhttp('POST', '/api/network/handoff/accept', { body: { handoff: envelope } }), 401, 'accept without auth');
+
+      const accepted = await xhttp('POST', '/api/network/handoff/accept', {
+        headers: { 'x-agent-key': targetKey }, body: { handoff: envelope },
+      });
+      eq(accepted.status, 200, 'accept handoff');
+      eq(accepted.json.accepted, true, 'accepted flag');
+      eq(accepted.json.handoff_id, envelope.handoff_id, 'accepted handoff id');
+      eq(accepted.json.target_network_id, `extra-${extraPort}`, 'target network id');
+      eq(accepted.json.accepted_by, targetAccountId, 'accepted_by account id');
+      assert(isIso(accepted.json.accepted_at), 'accepted_at ISO');
+      eq(accepted.json.context.price, 61.5, 'acceptance keeps signed context');
+      hasKeys(accepted.json.local_record, ['schema', 'handoff_id', 'target_network_id', 'accepted_by', 'accepted_at', 'context'], 'local record');
+
+      const again = await xhttp('POST', '/api/network/handoff/accept', {
+        headers: { 'x-agent-key': targetKey }, body: { handoff: envelope },
+      });
+      eq(again.status, 200, 'repeat accept');
+      eq(again.json.already_accepted, true, 'repeat accept is idempotent');
+
+      const acceptList = await xhttp('GET', '/api/network/handoffs');
+      eq(acceptList.status, 200, 'accepted handoff list');
+      hasKeys(acceptList.json, ['schema_version', 'count', 'handoffs'], 'accepted list envelope');
+      eq(acceptList.json.count, 1, 'accepted list count');
+      const acceptRead = await xhttp('GET', `/api/network/handoffs/${envelope.handoff_id}`);
+      eq(acceptRead.status, 200, 'accepted handoff read');
+      eq(acceptRead.json.accepted, true, 'accepted read flag');
+      eq(acceptRead.json.acceptance.handoff_id, envelope.handoff_id, 'acceptance record id');
+      assertErrorShape(await xhttp('GET', '/api/network/handoffs/hoff_missing'), 404, 'unknown acceptance');
+
+      const sourceRead = await http('GET', `/api/network/handoff/${envelope.handoff_id}`);
+      eq(sourceRead.status, 200, 'source handoff read');
+      eq(sourceRead.json.verified, true, 'source envelope verifies');
+      eq(sourceRead.json.accepted, true, 'source GET reflects target acceptance');
+      eq(sourceRead.json.acceptance.target_network_id, `extra-${extraPort}`, 'source acceptance target');
+
+      const viaId = await xhttp('POST', '/api/network/handoff/accept', {
+        body: { handoff_id: envelope.handoff_id, source_url: BASE, api_key: targetKey },
+      });
+      eq(viaId.status, 200, 'accept via handoff_id + source_url');
+      eq(viaId.json.already_accepted, true, 'source-url accept idempotent');
+
+      const tampered = JSON.parse(JSON.stringify(envelope));
+      tampered.context.price = 1;
+      assertErrorShape(await xhttp('POST', '/api/network/handoff/accept', { headers: { 'x-agent-key': targetKey }, body: { handoff: tampered } }), 400, 'tampered context');
+
+      assertErrorShape(await http('POST', '/api/network/handoff/accept', { headers: { 'x-agent-key': mainKey }, body: { handoff: envelope } }), 409, 'wrong target node');
+
+      // Back-compat: an envelope without context still signs/verifies/accepts.
+      const plain = await http('POST', '/api/network/handoff', {
+        headers: { 'x-agent-key': mainKey }, body: { post_id: postId, target_url: extra.url },
+      });
+      eq(plain.status, 201, 'create handoff without context');
+      assert(!('context' in plain.json.handoff), 'context omitted when not supplied');
+      const plainAccept = await xhttp('POST', '/api/network/handoff/accept', {
+        headers: { 'x-agent-key': targetKey }, body: { handoff: plain.json.handoff },
+      });
+      eq(plainAccept.status, 200, 'legacy handoff without context accepted');
+
+      await reset();
+      return `signed context accepted by target ${extra.url}; idempotent accept/list/read; source GET accepted=true; tamper 400; wrong target 409`;
+    } finally {
+      if (extra && extra.proc) {
+        try { extra.proc.kill('SIGTERM'); } catch {}
+        const deadline = Date.now() + 2000;
+        while (Date.now() < deadline && extra.proc.exitCode === null) await sleep(25);
+        if (extra.proc.exitCode === null) { try { extra.proc.kill('SIGKILL'); } catch {} }
+      }
+    }
+  });
+
+  await test('T92', 'v11 receipt expiry/revocation/key rotation preserved verification + manifest history', async () => {
+    await reset();
+    const initialKeyCount = ((await get('/api/instance')).json.reputation_public_keys || []).length;
+
+    async function settleDeal(label, buyerAgent) {
+      const reg = await post('/api/accounts/register', { role: 'merchant', display_name: `Life Merchant ${label}`, agent_name: `LifeMerchant${label}` });
+      const key = reg.json.api_key;
+      const offer = await http('POST', '/api/board/offers', {
+        headers: { 'x-agent-key': key },
+        body: { title: `Lifecycle item ${label}`, price_min: 80, price_max: 100, merchant_api: 'https://life.example/api', category: 'Gadgets' },
+      });
+      eq(offer.status, 201, `lifecycle offer ${label}`);
+      const postId = offer.json.post.id;
+      await post(`/api/board/posts/${postId}/close`, { price: 90, buyer_agent: buyerAgent });
+      await post(`/api/board/posts/${postId}/escrow-order`, {});
+      await post(`/api/board/posts/${postId}/escrow-authorize`, { simulate: true });
+      const confirm = await post(`/api/board/posts/${postId}/escrow-confirm`, { simulate: true });
+      eq(confirm.status, 200, `settle ${label}`);
+      return confirm.json.receipts;
+    }
+
+    const receipts = await settleDeal('one', 'LifeBuyer1');
+    eq(receipts.length, 2, 'two receipts issued');
+    for (const receipt of receipts) hasKeys(receipt, ['expires_at'], 'receipt expiry field');
+    const buyerReceipt = receipts.find((receipt) => receipt.role === 'buyer_agent');
+    const ttlDays = Math.round((Date.parse(buyerReceipt.expires_at) - Date.parse(buyerReceipt.issued_at)) / 86400000);
+    assert(ttlDays >= 364 && ttlDays <= 366, `default receipt TTL must be ~365 days, got ${ttlDays}`);
+
+    const before = await get('/api/network/reputation?agent=LifeBuyer1');
+    eq(before.status, 200, 'reputation before lifecycle changes');
+    eq(before.json.ttl_days, 365, 'aggregate ttl_days');
+    eq(before.json.count, 1, 'one buyer receipt');
+    eq(before.json.verified_count, 1, 'verified before revoke');
+    eq(before.json.expired_count, 0, 'not expired');
+    eq(before.json.revoked_count, 0, 'not revoked');
+    eq(before.json.nodes[0].receipts[0].valid, true, 'valid before revoke');
+
+    assertErrorShape(await post(`/api/network/reputation/${buyerReceipt.id}/revoke`, { reason: 'chargeback' }), 401, 'revoke without admin key');
+    assertErrorShape(await http('POST', `/api/network/reputation/${buyerReceipt.id}/revoke`, { headers: { 'x-admin-key': 'wrong' }, body: {} }), 401, 'revoke with wrong admin key');
+    assertErrorShape(await http('POST', '/api/network/reputation/rcpt_missing/revoke', { headers: { 'x-admin-key': ADMIN_KEY }, body: {} }), 404, 'revoke unknown receipt');
+
+    const revoked = await http('POST', `/api/network/reputation/${buyerReceipt.id}/revoke`, {
+      headers: { 'x-admin-key': ADMIN_KEY }, body: { reason: 'buyer chargeback' },
+    });
+    eq(revoked.status, 200, 'revoke receipt');
+    hasKeys(revoked.json, ['receipt_id', 'revoked', 'revoked_at'], 'revoke response');
+    eq(revoked.json.revoked, true, 'revoked flag');
+    const revokedAgain = await http('POST', `/api/network/reputation/${buyerReceipt.id}/revoke`, {
+      headers: { 'x-admin-key': ADMIN_KEY }, body: {},
+    });
+    eq(revokedAgain.json.already_revoked, true, 'revocation is idempotent');
+
+    const after = await get('/api/network/reputation?agent=LifeBuyer1');
+    eq(after.json.count, 1, 'revoked receipt still listed');
+    eq(after.json.verified_count, 0, 'revoked excluded from verified count');
+    eq(after.json.revoked_count, 1, 'revoked_count');
+    const lifecycleReceipt = after.json.nodes[0].receipts[0];
+    eq(lifecycleReceipt.verified, true, 'revoked receipt still cryptographically verified');
+    eq(lifecycleReceipt.revoked, true, 'receipt.revoked');
+    eq(lifecycleReceipt.valid, false, 'revoked receipt invalid');
+    assert(isIso(lifecycleReceipt.revoked_at), 'revoked_at ISO');
+    eq(lifecycleReceipt.revocation_reason, 'buyer chargeback', 'revocation_reason');
+    assert(!lifecycleReceipt.reason, 'revocation must not be reported as a crypto failure reason');
+
+    assertErrorShape(await post('/api/network/reputation/rotate-key', {}), 401, 'rotate-key without admin key');
+    const oldKey = before.json.nodes[0].public_key;
+    const rotated = await http('POST', '/api/network/reputation/rotate-key', { headers: { 'x-admin-key': ADMIN_KEY }, body: {} });
+    eq(rotated.status, 200, 'rotate-key');
+    hasKeys(rotated.json, ['rotated', 'rotated_at', 'previous_public_key', 'reputation_public_key', 'reputation_public_keys'], 'rotate response');
+    eq(rotated.json.rotated, true, 'rotated flag');
+    eq(rotated.json.previous_public_key, oldKey, 'previous key echoed');
+    eq(rotated.json.reputation_public_key, rotated.json.reputation_public_keys[0], 'current key first in history list');
+    assert(rotated.json.reputation_public_keys.length === initialKeyCount + 1, 'history has current + previous key');
+    assert(!JSON.stringify(rotated.json).includes('PRIVATE KEY'), 'rotation must not expose private keys');
+
+    const manifest = await get('/api/instance');
+    eq(manifest.json.reputation_public_key, rotated.json.reputation_public_key, 'manifest current key');
+    eq(manifest.json.reputation_public_keys.length, initialKeyCount + 1, 'manifest key history length');
+    assert(manifest.json.reputation_public_keys.includes(oldKey), 'manifest retains retired key');
+
+    const afterRotation = await get('/api/network/reputation?agent=LifeBuyer1');
+    eq(afterRotation.json.nodes[0].receipts[0].verified, true, 'old receipt still verifies after rotation');
+    assert(afterRotation.json.nodes[0].public_keys.includes(oldKey), 'node entry exposes key history');
+
+    const newReceipts = await settleDeal('two', 'LifeBuyer2');
+    const newBuyerReceipt = newReceipts.find((receipt) => receipt.role === 'buyer_agent');
+    eq(newBuyerReceipt.issuer_public_key, rotated.json.reputation_public_key, 'new receipt signed by rotated key');
+    const newRep = await get('/api/network/reputation?agent=LifeBuyer2');
+    eq(newRep.json.count, 1, 'new receipt aggregated');
+    eq(newRep.json.verified_count, 1, 'new receipt valid');
+
+    // Pure lifecycle checks (expiry + signed expires_at).
+    const reputationLib = require(path.join(ROOT, 'lib', 'reputation'));
+    const expired = reputationLib.lifecycle({ expires_at: new Date(Date.now() - 60000).toISOString() });
+    eq(expired.expired, true, 'past expires_at is expired');
+    const future = reputationLib.lifecycle({ expires_at: new Date(Date.now() + 86400000).toISOString() });
+    eq(future.expired, false, 'future expires_at is not expired');
+    const legacy = reputationLib.lifecycle({ issued_at: new Date(Date.now() - 366 * 86400000).toISOString() });
+    eq(legacy.expired, true, 'legacy receipt without expires_at derives TTL from issued_at');
+    const tamperedExpiry = Object.assign({}, buyerReceipt, { expires_at: new Date(Date.now() + 30 * 86400000).toISOString() });
+    const tamperedVerdict = reputationLib.verifyReceipt(tamperedExpiry, buyerReceipt.issuer_public_key);
+    eq(tamperedVerdict.verified, false, 'expires_at is signed: changing it invalidates the receipt');
+    eq(tamperedVerdict.reason, 'signature_invalid', 'tampered expiry reason');
+
+    await reset();
+    return `expires_at 365d; revoke excludes from verified_count (verified true, valid false); key rotation keeps old receipts valid + manifest history; tampered expiry rejected`;
   });
 }
 

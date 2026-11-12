@@ -604,30 +604,131 @@
     }
     return text(iso);
   }
+  function hasOwn(obj, name) { return Object.prototype.hasOwnProperty.call(obj, name); }
+  function flagOn(value) {
+    if (value === true) return true;
+    if (typeof value === 'number') return value > 0;
+    if (typeof value === 'string') {
+      var s = value.trim().toLowerCase();
+      return Boolean(s) && s !== 'false' && s !== '0' && s !== 'null';
+    }
+    if (value && typeof value === 'object') return true;
+    return false;
+  }
+  function flagInfo(value) {
+    var info = { at: null, reason: null };
+    if (!value) return info;
+    if (typeof value === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}/.test(value.trim())) info.at = value.trim();
+      else info.reason = value.trim();
+      return info;
+    }
+    if (typeof value === 'object') {
+      info.at = value.at || value.revoked_at || value.expired_at || value.timestamp || null;
+      info.reason = text(value.reason || value.revoke_reason || value.revocation_reason || value.revoked_reason || value.why) || null;
+    }
+    return info;
+  }
+  /* Receipt lifecycle: backend marks revoked/expired (boolean or metadata object);
+     counts from the API already exclude them, but local fallbacks must too. */
+  function receiptLifecycle(receipt) {
+    receipt = receipt && typeof receipt === 'object' ? receipt : {};
+    var revoked = false;
+    if (hasOwn(receipt, 'revoked')) revoked = flagOn(receipt.revoked);
+    else if (receipt.revoked_at) revoked = true;
+    var expired = false;
+    if (hasOwn(receipt, 'expired')) expired = flagOn(receipt.expired);
+    else if (receipt.expires_at) {
+      var expiresAt = Date.parse(receipt.expires_at);
+      if (isFinite(expiresAt) && expiresAt <= Date.now()) expired = true;
+    }
+    if (revoked) expired = false;
+    var info = revoked ? flagInfo(receipt.revoked) : (expired ? flagInfo(receipt.expired) : { at: null, reason: null });
+    return {
+      revoked: revoked,
+      expired: expired,
+      state: revoked ? 'revoked' : expired ? 'expired' : 'valid',
+      at: info.at || (revoked ? (receipt.revoked_at || null) : (expired ? (receipt.expired_at || receipt.effective_expires_at || receipt.expires_at || null) : null)),
+      reason: info.reason || text(receipt.revocation_reason || receipt.revoke_reason || receipt.revoked_reason) || null
+    };
+  }
+  function isActiveReceipt(receipt) {
+    if (receipt && typeof receipt === 'object' && typeof receipt.valid === 'boolean') return receipt.valid === true;
+    var life = receiptLifecycle(receipt);
+    return !life.revoked && !life.expired;
+  }
+  function lifecycleCounts(receipts) {
+    var out = { revoked: 0, expired: 0, active: 0 };
+    (Array.isArray(receipts) ? receipts : []).forEach(function (receipt) {
+      var life = receiptLifecycle(receipt);
+      if (life.revoked) out.revoked += 1;
+      else if (life.expired) out.expired += 1;
+      else out.active += 1;
+    });
+    return out;
+  }
   function buildReputationModel(res) {
     res = res && typeof res === 'object' ? res : {};
     var nodes = Array.isArray(res.nodes) ? res.nodes : [];
-    var total = typeof res.count === 'number' ? res.count : nodes.reduce(function (n, entry) {
-      return n + (Array.isArray(entry && entry.receipts) ? entry.receipts.length : 0);
-    }, 0);
-    var verified = typeof res.verified_count === 'number' ? res.verified_count : nodes.reduce(function (n, entry) {
-      return n + (Array.isArray(entry && entry.receipts) ? entry.receipts.filter(function (r) { return r && r.verified === true; }).length : 0);
-    }, 0);
-    var unverified = typeof res.unverified_count === 'number' ? res.unverified_count : Math.max(0, total - verified);
-    return { agent: text(res.agent), nodes: nodes, count: total, verifiedCount: verified, unverifiedCount: unverified };
+    var receipts = [];
+    nodes.forEach(function (entry) {
+      if (entry && Array.isArray(entry.receipts)) receipts = receipts.concat(entry.receipts);
+    });
+    var total = typeof res.count === 'number' ? res.count : receipts.length;
+    var verified = typeof res.verified_count === 'number' ? res.verified_count : receipts.filter(function (r) {
+      return r && r.verified === true && isActiveReceipt(r);
+    }).length;
+    var unverified = typeof res.unverified_count === 'number' ? res.unverified_count : receipts.filter(function (r) {
+      return r && r.verified !== true && isActiveReceipt(r);
+    }).length;
+    var lifecycle = lifecycleCounts(receipts);
+    var revokedCount = typeof res.revoked_count === 'number' ? res.revoked_count : lifecycle.revoked;
+    var expiredCount = typeof res.expired_count === 'number' ? res.expired_count : lifecycle.expired;
+    return {
+      agent: text(res.agent),
+      nodes: nodes,
+      count: total,
+      verifiedCount: verified,
+      unverifiedCount: unverified,
+      revokedCount: revokedCount,
+      expiredCount: expiredCount
+    };
   }
   function repReceipt(receipt) {
+    var life = receiptLifecycle(receipt);
     var verified = receipt.verified === true;
-    var badge = verified
-      ? '<span class="net-rep-badge ok">Verified</span>'
-      : '<span class="net-rep-badge bad">Unverified</span>';
+    // Lifecycle wins the primary badge (Revoked > Expired); crypto status is
+    // shown as a separate meta fact so a revoked-but-signed receipt stays clear.
+    var badge;
+    if (life.revoked) badge = '<span class="net-rep-badge revoked">Revoked</span>';
+    else if (life.expired) badge = '<span class="net-rep-badge expired">Expired</span>';
+    else if (verified) badge = '<span class="net-rep-badge ok">Verified</span>';
+    else badge = '<span class="net-rep-badge bad">Unverified</span>';
     var role = REP_ROLES[text(receipt.role)] || text(receipt.role) || 'Receipt';
     var meta = [];
     if (receipt.issuer_network_id) meta.push('Issuer <b>' + esc(receipt.issuer_network_id) + '</b>');
     if (receipt.post_id) meta.push('Post <code>' + esc(receipt.post_id) + '</code>');
     if (receipt.issued_at) meta.push(esc(repDate(receipt.issued_at)));
-    if (!verified && receipt.reason) meta.push('<span class="net-rep-reason">' + esc(receipt.reason) + '</span>');
-    return '<div class="net-rep-receipt">' +
+    var plainReason = text(receipt.reason).toLowerCase();
+    if (life.revoked) {
+      var revokedText = life.at ? 'revoked ' + esc(repDate(life.at)) : 'revoked';
+      var revokedBits = [revokedText];
+      if (life.reason) revokedBits.push(esc(life.reason));
+      meta.push('<span class="net-rep-lifecycle">' + revokedBits.join(' · ') + '</span>');
+    } else if (life.expired) {
+      meta.push('<span class="net-rep-lifecycle expired">expired' + (life.at ? ' ' + esc(repDate(life.at)) : '') + '</span>');
+    }
+    if (life.revoked || life.expired) {
+      if (verified) {
+        meta.push('signature verified');
+      } else {
+        meta.push('<span class="net-rep-reason">signature invalid' + (receipt.reason && plainReason !== 'revoked' && plainReason !== 'expired' ? ': ' + esc(receipt.reason) : '') + '</span>');
+      }
+    } else if (!verified && receipt.reason && plainReason !== 'revoked' && plainReason !== 'expired') {
+      meta.push('<span class="net-rep-reason">' + esc(receipt.reason) + '</span>');
+    }
+    var cls = 'net-rep-receipt' + (life.revoked ? ' is-revoked' : life.expired ? ' is-expired' : '');
+    return '<div class="' + cls + '">' +
       '<div class="net-rep-receipt-top">' + badge +
         '<span class="net-rep-subject">' + esc(text(receipt.subject_agent) || '(unnamed agent)') + '</span>' +
         '<span class="net-rep-role">' + esc(role) + '</span>' +
@@ -641,8 +742,11 @@
     var node = entry.node && typeof entry.node === 'object' ? entry.node : {};
     var receipts = Array.isArray(entry.receipts) ? entry.receipts : [];
     var count = typeof entry.count === 'number' ? entry.count : receipts.length;
-    var verified = typeof entry.verified_count === 'number' ? entry.verified_count : receipts.filter(function (r) { return r && r.verified === true; }).length;
-    var unverified = typeof entry.unverified_count === 'number' ? entry.unverified_count : Math.max(0, count - verified);
+    var verified = typeof entry.verified_count === 'number' ? entry.verified_count : receipts.filter(function (r) { return r && r.verified === true && isActiveReceipt(r); }).length;
+    var unverified = typeof entry.unverified_count === 'number' ? entry.unverified_count : receipts.filter(function (r) { return r && r.verified !== true && isActiveReceipt(r); }).length;
+    var life = lifecycleCounts(receipts);
+    var revokedCount = typeof entry.revoked_count === 'number' ? entry.revoked_count : life.revoked;
+    var expiredCount = typeof entry.expired_count === 'number' ? entry.expired_count : life.expired;
     var name = text(node.name) || text(node.network_id) || 'Unnamed node';
     var meta = node.network_id ? 'Network <b>' + esc(node.network_id) + '</b>' : 'Network ID unknown';
     if (node.public_url) {
@@ -658,6 +762,8 @@
         '<span class="net-rep-count">' + count + ' receipt' + (count === 1 ? '' : 's') + '</span>' +
         '<span class="net-rep-count ok">' + verified + ' verified</span>' +
         (unverified ? '<span class="net-rep-count bad">' + unverified + ' unverified</span>' : '') +
+        (revokedCount ? '<span class="net-rep-count warn">' + revokedCount + ' revoked</span>' : '') +
+        (expiredCount ? '<span class="net-rep-count warn">' + expiredCount + ' expired</span>' : '') +
         (entry.reachable === false ? '<span class="net-rep-count bad">Unreachable</span>' : '') +
       '</div>' +
     '</div>';
@@ -704,12 +810,16 @@
     }
     if (count) {
       count.textContent = model.count + ' receipt' + (model.count === 1 ? '' : 's') +
-        ' · ' + model.verifiedCount + ' verified';
+        ' · ' + model.verifiedCount + ' verified' +
+        (model.revokedCount ? ' · ' + model.revokedCount + ' revoked' : '') +
+        (model.expiredCount ? ' · ' + model.expiredCount + ' expired' : '');
     }
     var summary = '<div class="net-rep-summary">' +
       '<span class="net-rep-count">' + model.count + ' receipt' + (model.count === 1 ? '' : 's') + '</span>' +
       '<span class="net-rep-count ok">' + model.verifiedCount + ' verified</span>' +
       (model.unverifiedCount ? '<span class="net-rep-count bad">' + model.unverifiedCount + ' unverified</span>' : '') +
+      (model.revokedCount ? '<span class="net-rep-count warn">' + model.revokedCount + ' revoked</span>' : '') +
+      (model.expiredCount ? '<span class="net-rep-count warn">' + model.expiredCount + ' expired</span>' : '') +
       '<span>across ' + model.nodes.length + ' node' + (model.nodes.length === 1 ? '' : 's') + ' for ' + esc(model.agent || state.agent) + '</span>' +
     '</div>';
     host.innerHTML = summary + model.nodes.map(repNodeEntry).join('');
