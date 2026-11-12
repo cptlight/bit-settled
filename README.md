@@ -17,7 +17,6 @@ The board records public offers, wants, bids, counter-bids, votes and closed dea
 
 **Run your own:** [SELF-HOSTING.md](SELF-HOSTING.md) — `docker compose up --build` serves the entire living board with Caddy + Node + persistent volume.
 
-**Submission:** ready-to-paste Devpost text in **[SUBMISSION.md](SUBMISSION.md)**.
 
 The Hugging Face layer also retains the earlier trust-ledger, contract and claim infrastructure as the deeper settlement reference.
 
@@ -156,10 +155,6 @@ No one-by-one product entry: the merchant's agent does the initial catalog work 
 | **Instant refund** — claim settled from the reserve | ![refund](screenshots/instant-refund.png) |
 | **Agent console** — `trust.verify` + agent purchase | ![agent](screenshots/agent-console.png) |
 
-## The write-up (novelty, money, niche, USP, pitch, demo reality)
-
-**[WRITEUP.md](WRITEUP.md)** — one document covering: how novel the idea is (6/10, combinatorial; the three-leg test), the niche (high-AOV trust-deficit merchants + platforms enabling agentic checkout), the USP (portable, risk-priced, instant payout, agent API, no custody), how it makes money for PayPal ($138M / $447M / $1.13B at-scale scenarios plus loss reduction and take-rate defence), the 15s/30s/4-minute hook, and an honest "is the demo real?" audit (real logic + 85/85 tests; simulated money by default; live PayPal sandbox path one env var away).
-
 ## Before the hackathon: the Strategyzer-grounded playbook
 
 Read these in order:
@@ -261,10 +256,7 @@ The repo is the submission: working prototype + Apache-2.0 license + Devpost tex
 | Artifact | Where |
 |---|---|
 | Build spec — frozen AI + PayPal interfaces this was built against | **[AI-PAYPAL-BUILD-SPEC.md](AI-PAYPAL-BUILD-SPEC.md)** |
-| Rules, deadline (Nov 12, 2026, 2:00 PM PT), submission checklist | **[SUBMISSION-PLAN.md](SUBMISSION-PLAN.md)** |
 | Devpost text (inspiration → how we built it → SIM vs live) | **[DEVPOST.md](DEVPOST.md)** |
-| Video shot list, exact lines, fallbacks (<3:00) | **[VIDEO-SCRIPT.md](VIDEO-SCRIPT.md)** |
-| Story, novelty audit, PayPal money case | **[WRITEUP.md](WRITEUP.md)** |
 | One-page judge brief | **[JUDGE-BRIEF.md](JUDGE-BRIEF.md)** |
 | Pitch, Q&A, rubric map, rehearsal runbook | **[HACKATHON-PROOF.md](HACKATHON-PROOF.md)** |
 | License | **[LICENSE](LICENSE)** (Apache-2.0) |
@@ -311,13 +303,13 @@ node server.js
 
 ### 60-second judge path
 
-1. `npm test` — 85/85 assertions green, no network needed.
+1. `npm test` — 90/90 assertions green, no network needed.
 2. `node server.js` → open **`/demo.html`** → **Reset** → **Run full demo** → scorecard ends **ALL FIVE AXES 8+**.
 3. Step 3: leave **AI agents** checked → watch the negotiation transcript with `AI`/`FALLBACK` badges and the signed contract hash.
 4. Step 4: order at the agreed amount. In SIM it shows a payment id; with sandbox credentials the manual step renders real **PayPal Buttons** in a "Live PayPal sandbox" block (approve → real capture id).
 5. Step 5: **Recourse** → AI recommendation + confidence, then the refund id, reserve drop and recomputed score. Open `/` for the signed ledger and event log.
 
-**Read the honesty boundary before quoting anything:** the business logic and APIs are real and tested; money is **simulated by default**, with sandbox credentials the same flow returns real **PayPal sandbox** IDs, and the $25k pool is **demo capital**, not a balance sheet. Full statement in [DEVPOST.md](DEVPOST.md#what-is-real-vs-simulated) and [WRITEUP.md §7](WRITEUP.md).
+**Read the honesty boundary before quoting anything:** the business logic and APIs are real and tested; money is **simulated by default**, with sandbox credentials the same flow returns real **PayPal sandbox** IDs, and the $25k pool is **demo capital**, not a balance sheet. Full statement in [DEVPOST.md](DEVPOST.md#what-is-real-vs-simulated).
 
 ## What is real in this prototype
 
