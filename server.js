@@ -969,6 +969,7 @@ async function handleBoardCommentVote(req, res, id, messageId) {
 async function handleBoardEscrowOrder(req, res, id) {
   const account = boardAccountFromReq(req);
   if (rateLimited(req, res, 'escrow', account && account.id)) return;
+  const body = await readJson(req);
   const post = board.get(id);
   if (!post) return fail(res, 404, 'POST_NOT_FOUND', `no board post '${id}'`);
   if (post.kind !== 'external' || post.status !== 'deal') return fail(res, 409, 'DEAL_REQUIRED', 'deal must be recorded first');
@@ -976,6 +977,11 @@ async function handleBoardEscrowOrder(req, res, id) {
   if (post.payment_status === 'authorized') return sendJson(res, 200, { post, already_authorized: true });
   const amount = Number(post.agreed_price) || 0;
   if (!(amount > 0)) return fail(res, 409, 'NO_AMOUNT', 'no agreed price');
+  if (body.simulate === true) {
+    const simulatedId = 'SIM-ORDER-' + randHex(8);
+    const updated = board.setEscrowOrder(id, { escrow_order_id: simulatedId });
+    return sendJson(res, 200, { post: updated, escrow_order_id: simulatedId, approval_url: null, amount, mode: 'sim', simulated: true });
+  }
   const site = (process.env.PUBLIC_SITE_URL || process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, '');
   const order = await paypal.createAuthorization({
     amount,

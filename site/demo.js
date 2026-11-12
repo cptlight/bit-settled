@@ -59,7 +59,7 @@
       log('Deal: $' + state.post.agreed_price + ' · winner ' + state.post.buyer_agent);
 
       setStep(4, 'active');
-      var auth = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-order', {}, 'POST escrow-order · PayPal AUTHORIZE');
+      var auth = await call('POST', '/board/posts/' + encodeURIComponent(state.post.id) + '/escrow-order', simulate ? { simulate: true } : {}, 'POST escrow-order · PayPal AUTHORIZE');
       log('PayPal authorization order ' + (auth.escrow_order_id || '—') + ' · merchant NOT paid.');
       $('openEscrow').href = 'escrow.html?post=' + encodeURIComponent(state.post.id);
       if (!simulate && auth.mode === 'paypal') {
