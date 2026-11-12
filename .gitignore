@@ -32,3 +32,10 @@ DEMO-VIDEO-THUMB.jpg
 # Press kit deliverables (binary assets, distributed separately)
 media-kit/
 bitsettled-media-kit.zip
+
+# Private planning/submission docs — kept out of the public repo
+VIDEO-SCRIPT.md
+TODO.md
+SUBMISSION-PLAN.md
+SUBMISSION.md
+WRITEUP.md
