@@ -22,3 +22,6 @@ tmp/
 
 # Scratch/headless renders dropped into public/ during validation
 public/_*.html
+# Delivery media (uploaded separately; not source)
+DEMO-VIDEO.mp4
+DEMO-VIDEO-THUMB.jpg

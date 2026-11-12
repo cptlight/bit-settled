@@ -480,7 +480,7 @@ async function handleCreateOrder(req, res, merchantId) {
   };
   if (paymentResult.approval_url) payment.approval_url = paymentResult.approval_url;
 
-  const response = { order, payment, receipt, event };
+  const response = { order: publicFeeSafe(order), payment, receipt: publicFeeSafe(receipt), event: publicFeeSafe(event) };
   if (acc) response.acc = acc;
 
   // 200 (not 201): BUILD-SPEC §5 enumerates only 400/404/409 and treats every
@@ -517,7 +517,7 @@ async function handleFulfill(req, res, orderId) {
     product_id: order.product_id,
   });
 
-  sendJson(res, 200, { order, event });
+  sendJson(res, 200, { order: publicFeeSafe(order), event: publicFeeSafe(event) });
 }
 
 async function handleClaim(req, res, orderId) {
@@ -684,7 +684,7 @@ async function handleClaim(req, res, orderId) {
     actor,
   };
   if (claimAi) claimResponse.ai = claimAi;
-  sendJson(res, 200, claimResponse);
+  sendJson(res, 200, publicFeeSafe(claimResponse));
 }
 
 async function handleTrustVerify(req, res) {
@@ -733,11 +733,11 @@ async function handleTrustVerify(req, res) {
 }
 
 function handleListOrders(req, res, query) {
-  sendJson(res, 200, { orders: data.ordersFor(query.get('merchant') || null) });
+  sendJson(res, 200, { orders: data.ordersFor(query.get('merchant') || null).map(publicFeeSafe) });
 }
 
 function handleListEvents(req, res, query) {
-  sendJson(res, 200, { events: data.eventsFor(query.get('merchant') || null) });
+  sendJson(res, 200, { events: data.eventsFor(query.get('merchant') || null).map(publicFeeSafe) });
 }
 
 function handleReset(req, res) {
@@ -771,7 +771,7 @@ async function handlePaypalCapture(req, res) {
         status: capture && capture.status ? capture.status : 'COMPLETED',
       });
     }
-    sendJson(res, 200, { ok: true, capture, order: order || null });
+    sendJson(res, 200, { ok: true, capture, order: order ? publicFeeSafe(order) : null });
   } catch (err) {
     return fail(res, 502, 'PAYMENT_PROVIDER_ERROR', `capture failed: ${err.message}`);
   }
@@ -1313,6 +1313,21 @@ function handleNetworkReputationRotate(req, res) {
   sendJson(res, 200, reputation.rotateKey());
 }
 
+
+// Platform-fee fields are private: disclosed in terms, never returned on the
+// public board/API. Internal orders/events keep them for reconciliation.
+const PRIVATE_FEE_KEYS = new Set(['platform_fee_bps', 'platform_fee', 'merchant_net', 'platform_fee_collected']);
+function publicFeeSafe(value) {
+  if (Array.isArray(value)) return value.map(publicFeeSafe);
+  if (!value || typeof value !== 'object') return value;
+  const out = {};
+  for (const [key, val] of Object.entries(value)) {
+    if (PRIVATE_FEE_KEYS.has(key)) continue;
+    out[key] = publicFeeSafe(val);
+  }
+  return out;
+}
+
 function handleConfig(req, res) {
   const aiCfg = ai.config();
   const paypalInfo = paypal.info();
@@ -1329,7 +1344,6 @@ function handleConfig(req, res) {
       provider: aiCfg.provider,
       model: aiCfg.model,
     },
-    platform_fee_bps: PLATFORM_FEE_BPS,
   });
 }
 
