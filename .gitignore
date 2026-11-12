@@ -28,3 +28,7 @@ DEMO-VIDEO-THUMB.jpg
 
 # Local Cloudflare tooling cache
 .wrangler/
+
+# Press kit deliverables (binary assets, distributed separately)
+media-kit/
+bitsettled-media-kit.zip
