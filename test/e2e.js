@@ -332,7 +332,7 @@ async function stopServer() {
 
 // ---------------------------------------------------------------------------
 // v2 helpers — agents / passports / contracts / protection / claims
-// (HACKATHON-DEMO-SPEC.md; additive endpoints, existing shapes unchanged)
+// (hackathon demo endpoints; additive, existing shapes unchanged)
 // ---------------------------------------------------------------------------
 
 async function agentsList() {

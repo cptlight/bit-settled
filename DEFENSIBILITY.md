@@ -139,4 +139,4 @@ The strategic case (novelty audit, `$1.34B` protection cost centre, revenue scen
 - Not an insurer: the reserve is demo capital; an insurer/LC partner is required for the instant-claim promise at volume.
 - Not full A2A/MCP-remote support: an A2A-style card and a local stdio MCP server only.
 - Not a live Shopify/Woo app: payload adapters today.
-- Pre-revenue; the 90-day pilot plan and kill criteria are in [HACKATHON-PROOF.md](HACKATHON-PROOF.md).
+- Pre-revenue; the 90-day pilot plan and kill criteria are kept in the private strategy package.

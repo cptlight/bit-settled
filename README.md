@@ -158,7 +158,6 @@ No one-by-one product entry: the merchant's agent does the initial catalog work 
 ## Before the hackathon: the Strategyzer-grounded playbook
 
 Read these in order:
-1. **[HACKATHON-PROOF.md](HACKATHON-PROOF.md)** — the two books distilled into a skillset, an honest audit of Settled's weaknesses (buying centre, cold-start credential, free-protection comparison, model economics), the fixes, the 4-minute pitch, judge rubric mapping, 15 Q&A answers, demo reliability, the 48-hour runbook, team alignment, and the next tests.
 2. **[JUDGE-BRIEF.md](JUDGE-BRIEF.md)** — one printable page for judges.
 3. **[research/vpd-applied.md](research/vpd-applied.md)** and **[research/bmg-applied.md](research/bmg-applied.md)** — page-cited applications of *Value Proposition Design* and *Business Model Generation* to Settled.
 
@@ -196,7 +195,6 @@ Open **[/integrate.html](http://127.0.0.1:4173/integrate.html)** (or `integrate.
 
 ## Final review, integration and hosting
 
-- **[FINAL-REVIEW.md](FINAL-REVIEW.md)** — the full pre-submission review: how PayPal integrates Settled (merchant app, PSP/platform, consumer-AI API), the transaction sequence, what judges vet, the 4-minute pitch, hosting and the privacy plan.
 - **[DEPLOY.md](DEPLOY.md)** — Render Blueprint (`render.yaml`) and Docker instructions for a private demo URL.
 - **[AGENT-CHAT-SPEC.md](AGENT-CHAT-SPEC.md)** — the transparent agent-to-agent negotiation interface.
 
@@ -256,9 +254,7 @@ The repo is the submission: working prototype + Apache-2.0 license + Devpost tex
 | Artifact | Where |
 |---|---|
 | Build spec — frozen AI + PayPal interfaces this was built against | **[AI-PAYPAL-BUILD-SPEC.md](AI-PAYPAL-BUILD-SPEC.md)** |
-| Devpost text (inspiration → how we built it → SIM vs live) | **[DEVPOST.md](DEVPOST.md)** |
 | One-page judge brief | **[JUDGE-BRIEF.md](JUDGE-BRIEF.md)** |
-| Pitch, Q&A, rubric map, rehearsal runbook | **[HACKATHON-PROOF.md](HACKATHON-PROOF.md)** |
 | License | **[LICENSE](LICENSE)** (Apache-2.0) |
 
 ### Run and verify
@@ -309,7 +305,7 @@ node server.js
 4. Step 4: order at the agreed amount. In SIM it shows a payment id; with sandbox credentials the manual step renders real **PayPal Buttons** in a "Live PayPal sandbox" block (approve → real capture id).
 5. Step 5: **Recourse** → AI recommendation + confidence, then the refund id, reserve drop and recomputed score. Open `/` for the signed ledger and event log.
 
-**Read the honesty boundary before quoting anything:** the business logic and APIs are real and tested; money is **simulated by default**, with sandbox credentials the same flow returns real **PayPal sandbox** IDs, and the $25k pool is **demo capital**, not a balance sheet. Full statement in [DEVPOST.md](DEVPOST.md#what-is-real-vs-simulated).
+**Read the honesty boundary before quoting anything:** the business logic and APIs are real and tested; money is **simulated by default**, with sandbox credentials the same flow returns real **PayPal sandbox** IDs, and the $25k pool is **demo capital**, not a balance sheet. Full statement is kept in the private submission package.
 
 ## What is real in this prototype
 

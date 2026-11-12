@@ -58,5 +58,5 @@ Never put these in the Dockerfile or repo. The Space is public and sandbox-only;
 ## After deploy
 
 - Test `/start.html`, `/demo.html`, `/api/health`, `/api/config` (must say `mode:"sim"`).
-- Put the direct URL in `DEVPOST.md`.
+- Put the direct URL in the private submission package.
 - If the Space build fails, open the Space **Logs** tab; the Dockerfile needs outbound GitHub access during build.
