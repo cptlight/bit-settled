@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 python3 - "$URL" "$VIDEO" <<'PY'
 import sys
 url, video = sys.argv[1], sys.argv[2]
-for p in ['SUBMISSION.md','DEVPOST.md']:
+for p in ['DEVPOST.md']:
     s=open(p,encoding='utf-8').read()
     s=s.replace('HOSTED_DEMO_URL', url).replace('VIDEO_URL_HERE', video).replace('VIDEO_URL', video)
     open(p,'w',encoding='utf-8').write(s)
