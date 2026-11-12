@@ -248,7 +248,7 @@ function handleMerchantDetail(req, res, id) {
   sendJson(res, 200, {
     merchant: data.publicMerchant(merchant),
     ledger: bundle,
-    events: data.eventsFor(id),
+    events: data.eventsFor(id).map(publicFeeSafe),
   });
 }
 
@@ -277,7 +277,7 @@ async function handleMerchantVerify(req, res, id) {
 function handleMerchantEvents(req, res, id) {
   const merchant = data.getMerchant(id);
   if (!merchant) return fail(res, 404, 'MERCHANT_NOT_FOUND', `no merchant with id '${id}'`);
-  sendJson(res, 200, { events: data.eventsFor(id) });
+  sendJson(res, 200, { events: data.eventsFor(id).map(publicFeeSafe) });
 }
 
 async function handleCreateOrder(req, res, merchantId) {
